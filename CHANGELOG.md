@@ -36,15 +36,22 @@ Ejemplo:
 - Sprint 5: `SessionStatus` extendido con estados `pendingSync`, `syncing`, `synced`, `sent`, `completed`.
 - Sprint 5: `JobType` extendido con `uploadAsset`, `syncSession`, `generatePrivateSession`, `generateGallery`, `sendWhatsapp`, `cleanupStorage`, `deleteExpiredAssets`.
 
+- Sprint 6: `AppLogger` — registro centralizado en memoria (info/warning/error) sin datos sensibles.
+- Sprint 6: manejo global de errores — `runZonedGuarded`, `FlutterError.onError` y `ErrorWidget.builder` con `AppErrorWidget` amigable en vez de la pantalla roja de Flutter.
+- Sprint 6: botón "Abrir estudio" en `EventDetailScreen`, visible solo cuando el evento está `active` — corrige un punto muerto de navegación: el Estudio de grabación (Sprint 3) no tenía forma de alcanzarse desde la UI.
+
 ### Cambiado
 
 - Sprint 4: al confirmar una sesión se crean automáticamente los jobs de procesamiento y se navega a la pantalla de procesamiento.
 - Fix: validación de campos vacíos en LoginScreen y RegisterScreen antes de llamar a Supabase.
 - Fix: redirect loop en GoRouter cuando el usuario está autenticado pero sin modo de dispositivo seleccionado.
+- Sprint 6: logging agregado en puntos clave (login, registro, cierre de sesión, jobs de procesamiento y sincronización) y en `catch` que antes fallaban silenciosamente.
+- Sprint 6: corregidos varios textos sin tilde (Configuración, Iniciar sesión, Cerrar sesión, Administración, Operación, Grabación).
 
 ### Corregido
 
-- No hay cambios registrados.
+- Fix: `DateFormat(..., 'es')` lanzaba excepción no capturada (pantalla roja) en Calendario, Detalle de evento y selectores de fecha — faltaba `initializeDateFormatting('es')` en `main.dart`.
+- Sprint 6: eliminado código muerto (`_updateSignedUrlForWhatsapp` no-op) en `TaskQueueService`.
 
 ### Eliminado
 

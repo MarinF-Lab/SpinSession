@@ -35,8 +35,8 @@ import 'app_routes.dart';
 // sin recrear el GoRouter completo.
 class _RouterNotifier extends ChangeNotifier {
   _RouterNotifier(this._ref) {
-    _ref.listen(authControllerProvider, (_, __) => notifyListeners());
-    _ref.listen(deviceModeControllerProvider, (_, __) => notifyListeners());
+    _ref.listen(authControllerProvider, (_, _) => notifyListeners());
+    _ref.listen(deviceModeControllerProvider, (_, _) => notifyListeners());
   }
 
   final Ref _ref;

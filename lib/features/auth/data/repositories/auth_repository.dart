@@ -39,7 +39,7 @@ class SupabaseAuthRepository implements AuthRepository {
 
     final userEmail = response.user?.email;
     if (userEmail == null) {
-      throw const AppFailure('No fue posible iniciar sesion.');
+      throw const AppFailure('No fue posible iniciar sesión.');
     }
 
     return userEmail;

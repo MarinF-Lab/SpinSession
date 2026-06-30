@@ -1,4 +1,5 @@
 import '../../../../core/errors/app_failure.dart';
+import '../../../../core/logging/app_logger.dart';
 import '../../domain/entities/event_entity.dart';
 import '../../domain/entities/event_settings_entity.dart';
 import '../../domain/entities/event_status.dart';
@@ -61,8 +62,9 @@ class EventRepository {
       try {
         await _remote.upsert(event);
         await _local.markSynced(event.id);
-      } catch (_) {
-        // quedará pendiente para el próximo intento
+      } catch (error) {
+        AppLogger.warning(
+            'EventSync', 'Evento ${event.id} quedará pendiente: $error');
       }
     }
   }

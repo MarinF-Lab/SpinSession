@@ -135,6 +135,13 @@ class _EventDetailView extends ConsumerWidget {
           ],
         ],
       ),
+      floatingActionButton: event.eventStatus.canRecord
+          ? FloatingActionButton.extended(
+              onPressed: () => context.push(AppRoutes.studio(event.id)),
+              icon: const Icon(Icons.videocam_outlined),
+              label: const Text('Abrir estudio'),
+            )
+          : null,
     );
   }
 

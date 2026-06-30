@@ -13,9 +13,9 @@ enum DeviceMode {
 
   String get description {
     return switch (this) {
-      DeviceMode.camera => 'Solo grabacion y procesamiento.',
-      DeviceMode.operator => 'Administracion y control del evento.',
-      DeviceMode.both => 'Operacion completa en este dispositivo.',
+      DeviceMode.camera => 'Solo grabación y procesamiento.',
+      DeviceMode.operator => 'Administración y control del evento.',
+      DeviceMode.both => 'Operación completa en este dispositivo.',
     };
   }
 }

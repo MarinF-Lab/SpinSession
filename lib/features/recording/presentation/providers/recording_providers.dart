@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/database/app_database.dart';
+import '../../../../core/logging/app_logger.dart';
 import '../../../sessions/domain/entities/session_status.dart';
 import '../../../sessions/presentation/providers/session_providers.dart';
 import '../../data/datasources/recording_config_local_datasource.dart';
@@ -190,6 +191,7 @@ class RecordingController extends StateNotifier<RecordingState> {
         );
       }
     } catch (e) {
+      AppLogger.error('Recording', 'No se pudo detener la grabación', e);
       state = state.copyWith(
         isRecording: false,
         error: 'No se pudo detener la grabación.',

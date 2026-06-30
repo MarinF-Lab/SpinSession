@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/logging/app_logger.dart';
 import '../../../processing/data/datasources/processing_job_local_datasource.dart';
 import '../../../processing/domain/entities/job_status.dart';
 import '../../../processing/domain/entities/job_type.dart';
@@ -133,6 +134,7 @@ class SyncRepository {
     ));
 
     await _sessionDatasource.updateStatus(sessionId, SessionStatus.pendingSync);
+    AppLogger.info('Sync', 'Jobs de sincronización creados para sesión $sessionId');
   }
 
   String? _resolveOutputPath(ProcessingJobEntity job) {

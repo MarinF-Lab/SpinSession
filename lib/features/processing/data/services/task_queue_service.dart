@@ -1,3 +1,4 @@
+import '../../../../core/logging/app_logger.dart';
 import '../../../sessions/data/datasources/session_local_datasource.dart';
 import '../../../sessions/domain/entities/session_status.dart';
 import '../../../sync/data/repositories/sync_repository.dart';
@@ -60,6 +61,7 @@ class TaskQueueService {
 
       if (success) {
         await _repo.markCompleted(job.id);
+        AppLogger.info('TaskQueue', 'Job completado: ${job.jobType.name}');
         if (job.jobType.isMediaJob) {
           await _triggerSyncIfReady(job.sessionId);
         }
@@ -68,11 +70,16 @@ class TaskQueueService {
         if (nextAttempts >= 3) {
           await _repo.markFailed(
               job.id, 'Máximo de reintentos alcanzado', nextAttempts);
+          AppLogger.error('TaskQueue',
+              'Job agotó reintentos: ${job.jobType.name} (${job.id})');
         } else {
           await _repo.markRetrying(job.id, nextAttempts);
+          AppLogger.warning('TaskQueue',
+              'Reintentando job ${job.jobType.name} (intento $nextAttempts)');
         }
       }
-    } catch (_) {
+    } catch (error) {
+      AppLogger.error('TaskQueue', 'Excepción inesperada en cola', error);
       // Continúa con el siguiente job aunque el actual falle inesperadamente
     } finally {
       _isProcessing = false;
@@ -140,7 +147,9 @@ class TaskQueueService {
         case JobType.deleteExpiredAssets:
           return true; // Implementado en Sprint 6
       }
-    } catch (_) {
+    } catch (error) {
+      AppLogger.error(
+          'TaskQueue', 'Fallo ejecutando ${job.jobType.name}', error);
       return false;
     }
   }
@@ -175,25 +184,16 @@ class TaskQueueService {
 
     // Genera URL firmada del thumbnail principal como acceso privado
     try {
-      final signedUrl = await _storage.createSignedUrl(
-        'sessions/$sessionId/1/thumbnail.jpg',
-      );
+      await _storage.createSignedUrl('sessions/$sessionId/1/thumbnail.jpg');
       await _repo.updateStatus(job.id, JobStatus.running);
-      // Guarda la URL en el payload del job de WhatsApp
-      await _updateSignedUrlForWhatsapp(job.sessionId, signedUrl);
-    } catch (_) {
-      // Storage puede no tener el archivo aún; se reintenta
+    } catch (error) {
+      AppLogger.warning('TaskQueue',
+          'Sesión privada: archivo aún no disponible en storage ($error)');
       return false;
     }
 
     await _sessionDatasource.updateStatus(sessionId, SessionStatus.synced);
     return true;
-  }
-
-  Future<void> _updateSignedUrlForWhatsapp(
-      String sessionId, String signedUrl) async {
-    // No-op: el job de WhatsApp lee la URL en su propio payload via session
-    // En una versión futura se almacenará en session_assets
   }
 
   Future<bool> _executeGenerateGallery(ProcessingJobEntity job) async {

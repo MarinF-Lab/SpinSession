@@ -72,7 +72,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ],
                   const SizedBox(height: 24),
                   PrimaryButton(
-                    label: 'Iniciar sesion',
+                    label: 'Iniciar sesión',
                     isLoading: authState.isLoading,
                     onPressed: _submit,
                   ),

@@ -14,7 +14,7 @@ class SettingsScreen extends ConsumerWidget {
     final themeMode = ref.watch(themeControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Configuracion')),
+      appBar: AppBar(title: const Text('Configuración')),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
@@ -41,7 +41,7 @@ class SettingsScreen extends ConsumerWidget {
                 context.go(AppRoutes.login);
               }
             },
-            child: const Text('Cerrar sesion'),
+            child: const Text('Cerrar sesión'),
           ),
         ],
       ),

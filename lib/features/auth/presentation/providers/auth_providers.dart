@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/logging/app_logger.dart';
 import '../../data/repositories/auth_repository.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
@@ -37,9 +38,11 @@ class AuthController extends StateNotifier<AuthState> {
         password: password,
       );
       state = AuthState.authenticated(userEmail);
+      AppLogger.info('Auth', 'Inicio de sesión exitoso');
       return true;
     } catch (error) {
       state = AuthState.error(error.toString());
+      AppLogger.warning('Auth', 'Fallo al iniciar sesión');
       return false;
     }
   }
@@ -56,9 +59,11 @@ class AuthController extends StateNotifier<AuthState> {
         password: password,
       );
       state = AuthState.authenticated(userEmail);
+      AppLogger.info('Auth', 'Registro exitoso');
       return true;
     } catch (error) {
       state = AuthState.error(error.toString());
+      AppLogger.warning('Auth', 'Fallo al registrar usuario');
       return false;
     }
   }
@@ -67,6 +72,7 @@ class AuthController extends StateNotifier<AuthState> {
     state = const AuthState.loading();
     await _authRepository.signOut();
     state = const AuthState.unauthenticated();
+    AppLogger.info('Auth', 'Sesión cerrada');
   }
 }
 

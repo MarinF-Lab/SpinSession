@@ -99,7 +99,7 @@ class _GuestRegistrationScreenState
                 SizedBox(
                   width: 110,
                   child: DropdownButtonFormField<String>(
-                    value: _countryCode,
+                    initialValue: _countryCode,
                     decoration:
                         const InputDecoration(labelText: 'Código'),
                     items: _countryCodes

@@ -19,7 +19,7 @@ class HomeScreen extends ConsumerWidget {
         title: const Text('SpinSession'),
         actions: [
           IconButton(
-            tooltip: 'Configuracion',
+            tooltip: 'Configuración',
             onPressed: () => context.go(AppRoutes.settings),
             icon: const Icon(Icons.settings_outlined),
           ),
@@ -30,7 +30,7 @@ class HomeScreen extends ConsumerWidget {
         children: [
           Text('Inicio', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 8),
-          Text(userEmail ?? 'Sesion local no iniciada'),
+          Text(userEmail ?? 'Sesión local no iniciada'),
           const SizedBox(height: 8),
           Text('Modo: ${deviceMode?.label ?? 'Sin seleccionar'}'),
           const SizedBox(height: 24),

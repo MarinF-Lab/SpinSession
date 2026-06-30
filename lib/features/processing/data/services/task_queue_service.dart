@@ -1,0 +1,248 @@
+import '../../../sessions/data/datasources/session_local_datasource.dart';
+import '../../../sessions/domain/entities/session_status.dart';
+import '../../../sync/data/repositories/sync_repository.dart';
+import '../../../sync/data/services/storage_service.dart';
+import '../../../sync/data/services/sync_service.dart';
+import '../../domain/entities/job_status.dart';
+import '../../domain/entities/job_type.dart';
+import '../../domain/entities/processing_job_entity.dart';
+import '../repositories/processing_repository.dart';
+import 'ffmpeg_service.dart';
+
+class TaskQueueService {
+  TaskQueueService(
+    this._repo,
+    this._ffmpeg,
+    this._storage,
+    this._sync,
+    this._syncRepo,
+    this._sessionDatasource,
+  );
+
+  final ProcessingRepository _repo;
+  final FFmpegService _ffmpeg;
+  final StorageService _storage;
+  final SyncService _sync;
+  final SyncRepository _syncRepo;
+  final SessionLocalDatasource _sessionDatasource;
+
+  bool _isRunning = false;
+  bool _isProcessing = false;
+
+  void start() {
+    if (_isRunning) return;
+    _isRunning = true;
+    _processNext();
+  }
+
+  void stop() => _isRunning = false;
+
+  Future<void> resumePending() async {
+    final pending = await _repo.getPending();
+    if (pending.isEmpty) return;
+    _isRunning = true;
+    _processNext();
+  }
+
+  Future<void> _processNext() async {
+    if (!_isRunning || _isProcessing) return;
+    _isProcessing = true;
+
+    try {
+      final job = await _repo.getNextPending();
+      if (job == null) {
+        _isRunning = false;
+        return;
+      }
+
+      await _repo.updateStatus(job.id, JobStatus.running);
+      final success = await _executeJob(job);
+
+      if (success) {
+        await _repo.markCompleted(job.id);
+        if (job.jobType.isMediaJob) {
+          await _triggerSyncIfReady(job.sessionId);
+        }
+      } else {
+        final nextAttempts = job.attempts + 1;
+        if (nextAttempts >= 3) {
+          await _repo.markFailed(
+              job.id, 'Máximo de reintentos alcanzado', nextAttempts);
+        } else {
+          await _repo.markRetrying(job.id, nextAttempts);
+        }
+      }
+    } catch (_) {
+      // Continúa con el siguiente job aunque el actual falle inesperadamente
+    } finally {
+      _isProcessing = false;
+      if (_isRunning) _processNext();
+    }
+  }
+
+  Future<void> _triggerSyncIfReady(String sessionId) async {
+    final allDone = await _syncRepo.areAllMediaJobsComplete(sessionId);
+    if (allDone) {
+      await _syncRepo.createSyncJobsForSession(sessionId);
+    }
+  }
+
+  Future<bool> _executeJob(ProcessingJobEntity job) async {
+    final payload = job.payload;
+
+    try {
+      switch (job.jobType) {
+        // ── Sprint 4: FFmpeg ────────────────────────────────────────────────
+        case JobType.generateThumbnail:
+          return await _ffmpeg.generateThumbnail(
+            payload['inputPath']!,
+            payload['outputPath']!,
+            (p) => _updateProgress(job.id, p),
+          );
+        case JobType.generateSlowMotion:
+          return await _ffmpeg.generateSlowMotion(
+            payload['inputPath']!,
+            payload['outputPath']!,
+            (p) => _updateProgress(job.id, p),
+          );
+        case JobType.generateReverse:
+          return await _ffmpeg.generateReverse(
+            payload['inputPath']!,
+            payload['outputPath']!,
+            (p) => _updateProgress(job.id, p),
+          );
+        case JobType.generateBoomerang:
+          return await _ffmpeg.generateBoomerang(
+            payload['inputPath']!,
+            payload['outputPath']!,
+            (p) => _updateProgress(job.id, p),
+          );
+        case JobType.generateBurst:
+          return await _ffmpeg.generateBurst(
+            payload['inputPath']!,
+            payload['outputDir']!,
+            (p) => _updateProgress(job.id, p),
+          );
+
+        // ── Sprint 5: Sync ──────────────────────────────────────────────────
+        case JobType.uploadAsset:
+          return await _executeUploadAsset(job);
+        case JobType.syncSession:
+          return await _executeSyncSession(job);
+        case JobType.generatePrivateSession:
+          return await _executeGeneratePrivateSession(job);
+        case JobType.generateGallery:
+          return await _executeGenerateGallery(job);
+        case JobType.sendWhatsapp:
+          return await _executeSendWhatsapp(job);
+        case JobType.cleanupStorage:
+          return await _executeCleanup(job);
+        case JobType.deleteExpiredAssets:
+          return true; // Implementado en Sprint 6
+      }
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> _executeUploadAsset(ProcessingJobEntity job) async {
+    final localPath = job.payload['localPath'] as String?;
+    final remotePath = job.payload['remotePath'] as String?;
+    if (localPath == null || remotePath == null) return false;
+
+    await _updateProgress(job.id, 0.1);
+    await _storage.uploadFile(localPath, remotePath);
+    await _updateProgress(job.id, 1.0);
+    return true;
+  }
+
+  Future<bool> _executeSyncSession(ProcessingJobEntity job) async {
+    final sessionId = job.payload['sessionId'] as String?;
+    if (sessionId == null) return false;
+
+    final session = await _sessionDatasource.getById(sessionId);
+    if (session == null) return false;
+
+    await _sync.syncSession(session);
+    await _sessionDatasource.updateStatus(sessionId, SessionStatus.syncing);
+    return true;
+  }
+
+  Future<bool> _executeGeneratePrivateSession(
+      ProcessingJobEntity job) async {
+    final sessionId = job.payload['sessionId'] as String?;
+    if (sessionId == null) return false;
+
+    // Genera URL firmada del thumbnail principal como acceso privado
+    try {
+      final signedUrl = await _storage.createSignedUrl(
+        'sessions/$sessionId/1/thumbnail.jpg',
+      );
+      await _repo.updateStatus(job.id, JobStatus.running);
+      // Guarda la URL en el payload del job de WhatsApp
+      await _updateSignedUrlForWhatsapp(job.sessionId, signedUrl);
+    } catch (_) {
+      // Storage puede no tener el archivo aún; se reintenta
+      return false;
+    }
+
+    await _sessionDatasource.updateStatus(sessionId, SessionStatus.synced);
+    return true;
+  }
+
+  Future<void> _updateSignedUrlForWhatsapp(
+      String sessionId, String signedUrl) async {
+    // No-op: el job de WhatsApp lee la URL en su propio payload via session
+    // En una versión futura se almacenará en session_assets
+  }
+
+  Future<bool> _executeGenerateGallery(ProcessingJobEntity job) async {
+    // La galería pública se genera en Supabase en Sprint 6 (web app)
+    // En Sprint 5 simplemente marcamos el evento como listo para galería
+    return true;
+  }
+
+  Future<bool> _executeSendWhatsapp(ProcessingJobEntity job) async {
+    final phone = job.payload['phone'] as String?;
+    final countryCode = job.payload['countryCode'] as String?;
+    final guestName = job.payload['guestName'] as String?;
+    final sessionId = job.payload['sessionId'] as String?;
+    if (phone == null || countryCode == null || sessionId == null) return false;
+
+    String signedUrl = '';
+    try {
+      signedUrl = await _storage.createSignedUrl(
+        'sessions/$sessionId/1/slow_motion.mp4',
+      );
+    } catch (_) {
+      try {
+        signedUrl = await _storage.createSignedUrl(
+          'sessions/$sessionId/1/thumbnail.jpg',
+        );
+      } catch (_) {
+        signedUrl = 'https://spinsession.app/session/$sessionId';
+      }
+    }
+
+    await _sync.sendWhatsapp(
+      phone: phone,
+      countryCode: countryCode,
+      signedUrl: signedUrl,
+      guestName: guestName ?? 'invitado',
+    );
+
+    await _sessionDatasource.updateStatus(sessionId, SessionStatus.sent);
+    return true;
+  }
+
+  Future<bool> _executeCleanup(ProcessingJobEntity job) async {
+    // Limpieza de archivos temporales locales — Sprint 6 implementará reglas de retención
+    await _sessionDatasource.updateStatus(
+        job.sessionId, SessionStatus.completed);
+    return true;
+  }
+
+  Future<void> _updateProgress(String jobId, double progress) async {
+    await _repo.updateProgress(jobId, progress);
+  }
+}

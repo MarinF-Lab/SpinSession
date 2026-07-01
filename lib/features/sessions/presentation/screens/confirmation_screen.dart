@@ -25,9 +25,11 @@ class ConfirmationScreen extends ConsumerWidget {
     final sessionNotifier = ref.read(sessionControllerProvider.notifier);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Confirmar sesión')),
+      appBar: AppBar(title: const Text('Grabando')),
       body: Column(
         children: [
+          if (recordingState.takes.isNotEmpty)
+            _TakesPreviewRow(count: recordingState.takes.length),
           Expanded(
             child: _TakesList(
               takes: recordingState.takes,
@@ -78,6 +80,43 @@ class ConfirmationScreen extends ConsumerWidget {
     if (context.mounted) {
       context.go(AppRoutes.processing(sessionId));
     }
+  }
+}
+
+class _TakesPreviewRow extends StatelessWidget {
+  const _TakesPreviewRow({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Vista previa', style: theme.textTheme.titleSmall),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 64,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: count,
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              itemBuilder: (_, i) => Container(
+                width: 64,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.videocam_outlined),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -135,19 +174,27 @@ class _ActionPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          PrimaryButton(
-            label: 'Confirmar sesión ($takeCount toma${takeCount != 1 ? 's' : ''})',
-            onPressed: takeCount > 0 ? onConfirm : null,
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: onRetry,
+                  child: const Text('REPETIR'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: PrimaryButton(
+                  label: 'ACEPTAR',
+                  onPressed: takeCount > 0 ? onConfirm : null,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           SecondaryButton(
             label: 'Agregar otra toma',
             onPressed: onAddTake,
-          ),
-          const SizedBox(height: 8),
-          SecondaryButton(
-            label: 'Repetir toda la sesión',
-            onPressed: onRetry,
           ),
           const SizedBox(height: 8),
           TextButton(

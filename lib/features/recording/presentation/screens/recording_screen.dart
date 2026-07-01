@@ -176,22 +176,36 @@ class _RecordingIndicator extends StatelessWidget {
       left: 0,
       right: 0,
       child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.red.withValues(alpha: 0.8),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.fiber_manual_record,
-                  color: Colors.white, size: 12),
-              const SizedBox(width: 6),
-              Text(label,
-                  style: const TextStyle(color: Colors.white, fontSize: 14)),
-            ],
-          ),
+        child: Column(
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFFB894DF),
+                fontSize: 32,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.85),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.fiber_manual_record,
+                      color: Colors.white, size: 10),
+                  SizedBox(width: 4),
+                  Text('REC',
+                      style: TextStyle(color: Colors.white, fontSize: 12)),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

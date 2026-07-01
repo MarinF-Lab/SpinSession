@@ -55,43 +55,73 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final eventsAsync = ref.watch(eventsForDateProvider(_selectedDay));
     final monthLabel =
         DateFormat('MMMM yyyy', 'es').format(_focusedMonth);
+    final dayLabel = DateFormat('d MMMM', 'es').format(_selectedDay);
+    final isToday = DateUtils.isSameDay(_selectedDay, DateTime.now());
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          monthLabel[0].toUpperCase() + monthLabel.substring(1),
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.chevron_left),
-          onPressed: _prevMonth,
-        ),
+        leading: const Icon(Icons.menu_outlined),
+        title: const Text('Calendario'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.chevron_right),
-            onPressed: _nextMonth,
-          ),
-          IconButton(
-            icon: const Icon(Icons.today),
-            tooltip: 'Hoy',
-            onPressed: () {
-              final now = DateTime.now();
-              setState(() {
-                _focusedMonth = DateTime(now.year, now.month);
-                _selectedDay = DateTime(now.year, now.month, now.day);
-              });
-            },
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: null,
           ),
         ],
       ),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 8, 4),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.chevron_left),
+                  onPressed: _prevMonth,
+                ),
+                Expanded(
+                  child: Text(
+                    monthLabel[0].toUpperCase() + monthLabel.substring(1),
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right),
+                  onPressed: _nextMonth,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.calendar_today_outlined, size: 20),
+                  tooltip: 'Hoy',
+                  onPressed: () {
+                    final now = DateTime.now();
+                    setState(() {
+                      _focusedMonth = DateTime(now.year, now.month);
+                      _selectedDay = DateTime(now.year, now.month, now.day);
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
           _MonthGrid(
             focusedMonth: _focusedMonth,
             selectedDay: _selectedDay,
             onDayTap: (day) => setState(() => _selectedDay = day),
           ),
           const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                isToday ? 'Hoy · $dayLabel' : dayLabel,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ),
+          ),
           Expanded(
             child: eventsAsync.when(
               data: (events) => _EventList(events: events),
@@ -102,10 +132,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: () => context.push(AppRoutes.eventCreate),
-        icon: const Icon(Icons.add),
-        label: const Text('Nuevo evento'),
+        shape: const CircleBorder(),
+        child: const Icon(Icons.add),
       ),
       bottomNavigationBar: const AppBottomNav(current: AppTab.calendario),
     );

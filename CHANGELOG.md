@@ -45,6 +45,10 @@ Ejemplo:
 - Diseño: navegación inferior persistente (`AppBottomNav`) con 4 pestañas — Calendario, Estudio, Registro, Ajustes — reemplazando la pantalla "Inicio" como landing tras el login.
 - Diseño: `EstudioTabScreen` y `RegistroTabScreen` — muestran automáticamente el evento activo del usuario (`activeEventProvider`) sin navegación manual.
 - Diseño: botones, FAB y tarjetas con esquinas redondeadas (pill/16px) y `StatusChip` con colores de estado del mockup (Reservado, Pagado, Activo, Finalizado).
+- Diseño: `CalendarScreen` con topbar de dos filas (título + navegación de mes), `EventCard` restilizado (hora/nombre/chip inline), FAB circular.
+- Diseño: `EstudioTabScreen` con card "Evento activo" morada, formulario embebido de nueva sesión y "Configuración rápida" (duración, efectos, tomas máx.) leídos de `RecordingConfigEntity`.
+- Diseño: `ConfirmationScreen` con fila "Vista previa" de miniaturas y botones REPETIR/ACEPTAR; `RecordingScreen` con temporizador morado y badge REC.
+- Diseño: `RegistroTabScreen` con chips de filtro (Todos/Pendientes/Enviadas) y lista de invitados con avatar, tomas/videos e ícono de estado de sincronización.
 
 ### Cambiado
 

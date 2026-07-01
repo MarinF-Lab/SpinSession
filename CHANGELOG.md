@@ -70,7 +70,17 @@ Ejemplo:
 
 ### Eliminado
 
-- No hay cambios registrados.
+- Sprint 7: dependencia `mobile_scanner` (nunca usada — la galería solo genera QR, no escanea).
+- Sprint 7: dependencia `connectivity_plus` y `connectivityProvider` (código muerto, sin consumidores).
+
+### Sprint 7 (en curso)
+
+- Configuración de firma release vía `android/key.properties` (ignorado por Git; ver `key.properties.example`).
+- Minificación R8/ProGuard y `isShrinkResources` habilitados en el build type `release`.
+- Splits por ABI (`armeabi-v7a`, `arm64-v8a`, `x86_64`) para reducir el tamaño del APK universal.
+- `LICENSE` (software propietario) y versión fijada en `1.0.0+1`.
+- Fix: `test/widget_test.dart` fallaba porque Supabase nunca se inicializaba en el entorno de test, y esperaba el texto `'Iniciar sesion'` sin tilde (ya corregido en Sprint 6).
+- `DOCS/supabase_schema.sql` documentado como referencia de infraestructura.
 
 ---
 

@@ -1,0 +1,8 @@
+## Copiar este archivo como "key.properties" en la misma carpeta (android/)
+## y completar con los datos reales del keystore de producción.
+## "key.properties" está en .gitignore y NUNCA debe subirse al repositorio.
+
+storePassword=CAMBIA_ESTA_CONTRASEÑA
+keyPassword=CAMBIA_ESTA_CONTRASEÑA
+keyAlias=spinsession
+storeFile=../spinsession-release.jks

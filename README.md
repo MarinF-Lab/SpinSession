@@ -2,9 +2,9 @@
 
 Sistema profesional para la gestión de eventos, captura multimedia, procesamiento local y distribución automática de contenido.
 
-**Estado:** 🚧 En desarrollo
+**Estado:** 🚧 Sprint 7 — Release, Publicación y Cierre
 
-**Versión:** 1.0.0-dev
+**Versión:** 1.0.0
 
 ---
 
@@ -170,22 +170,17 @@ analysis_options.yaml
 
 # Documentación
 
-Toda la documentación del proyecto se encuentra dentro de la carpeta **docs/**.
+En la raíz del proyecto:
 
-Documentos principales:
+- `PRD.md`
+- `ANEXO_TECNICO.md`
+- `CODING_RULES.md`
 
-- PRD
-- ANEXO_TECNICO
-- CODING_RULES
-- ARCHITECTURE_DECISIONS
-- TASK_TYPES
-- SPRINT_1
-- SPRINT_2
-- SPRINT_3
-- SPRINT_4
-- SPRINT_5
-- SPRINT_6
-- SPRINT_7
+Dentro de **DOCS/**:
+
+- `SPRINT_1.md` a `SPRINT_7.md`
+- `Testing.md`
+- `supabase_schema.sql`
 
 Antes de implementar cualquier funcionalidad deberá revisarse la documentación correspondiente.
 
@@ -317,9 +312,36 @@ No deben implementarse funcionalidades pertenecientes a Sprints posteriores.
 - ✅ Rutas GoRouter actualizadas con todas las pantallas del Sprint 3.
 - ✅ `flutter analyze` sin errores ni warnings.
 
+### Sprint 4 — Completado ✅
+
+- ✅ Motor de procesamiento multimedia: `TaskQueueService`, `FFmpegService` (miniatura, cámara lenta, reverse, boomerang, ráfaga).
+- ✅ Tabla Drift `processing_jobs` (schemaVersion → 4) y `ProcessingScreen` con progreso en tiempo real.
+
+### Sprint 5 — Completado ✅
+
+- ✅ Sincronización con Supabase Storage, `SyncService`, `SyncRepository` (creación automática de jobs de sync).
+- ✅ Galería pública (`GalleryScreen`), sesión privada (`PrivateSessionScreen`), envío por WhatsApp (`share_plus`).
+
+### Sprint 6 — Completado ✅
+
+- ✅ `AppLogger` y manejo global de errores (`runZonedGuarded`, `ErrorWidget.builder`).
+- ✅ Fix crítico: tablas de Supabase (`events`, `sessions`, `session_assets`) y bucket `spinsession` nunca existieron — creado `DOCS/supabase_schema.sql`.
+- ✅ Fix: sincronización remota completa (`pullFromRemote` + `syncPending`), con protección contra pérdida de cambios locales pendientes.
+- ✅ Rediseño visual completo según Design System: paleta morada, navegación inferior (Calendario/Estudio/Registro/Ajustes), Estudio con formulario embebido, Grabando con temporizador y vista previa, Registro con filtros y avatares.
+- ✅ Limpieza de dependencias no usadas (`mobile_scanner`, `connectivity_plus`) y código muerto.
+
+### Sprint 7 — En curso 🚧
+
+- ✅ Configuración de firma release (`key.properties`, ignorado por Git) y minificación R8/ProGuard.
+- ✅ Splits por ABI para reducir tamaño del APK.
+- ✅ `LICENSE` (software propietario) y versionado semántico (1.0.0).
+- ✅ Auditoría de seguridad: sin secretos expuestos (solo clave pública `anon` de Supabase, protegida por RLS).
+- ✅ Test suite corregido y pasando (`flutter test`).
+- ⏳ Pruebas finales end-to-end en emulador — pendiente, se realizan con guía directa del usuario.
+
 Próximo objetivo:
 
-**Implementar Sprint 4.**
+**Cerrar Sprint 7: pruebas finales guiadas por el usuario y generación de APK/AAB firmados.**
 
 ---
 

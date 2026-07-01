@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/app_routes.dart';
 import '../../../../app/theme/theme_controller.dart';
+import '../../../../shared/widgets/app_bottom_nav.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -45,6 +46,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ],
       ),
+      bottomNavigationBar: const AppBottomNav(current: AppTab.ajustes),
     );
   }
 }

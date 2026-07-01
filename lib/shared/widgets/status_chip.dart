@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/theme/app_colors.dart';
 import '../../features/events/domain/entities/event_status.dart';
 
 class StatusChip extends StatelessWidget {
@@ -29,12 +30,17 @@ class StatusChip extends StatelessWidget {
   (String, Color, Color) _style(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return switch (status) {
-      EventStatus.reserved => ('Reservado', cs.secondaryContainer, cs.onSecondaryContainer),
-      EventStatus.pendingPayment => ('Pago Pendiente', const Color(0xFFFFF3CD), const Color(0xFF856404)),
-      EventStatus.paid => ('Pagado', const Color(0xFFD4EDDA), const Color(0xFF155724)),
-      EventStatus.active => ('Activo', cs.primaryContainer, cs.onPrimaryContainer),
+      EventStatus.reserved =>
+        ('Reservado', AppColors.statusReserved.withValues(alpha: 0.16), AppColors.statusReserved),
+      EventStatus.pendingPayment =>
+        ('Pago Pendiente', const Color(0xFFFFF3CD), const Color(0xFF856404)),
+      EventStatus.paid =>
+        ('Pagado', AppColors.statusPaid.withValues(alpha: 0.16), AppColors.statusPaid),
+      EventStatus.active =>
+        ('Activo', AppColors.statusActive.withValues(alpha: 0.16), AppColors.statusActive),
       EventStatus.paused => ('Pausado', cs.surfaceContainerHighest, cs.onSurfaceVariant),
-      EventStatus.finished => ('Finalizado', cs.surfaceContainerHighest, cs.onSurfaceVariant),
+      EventStatus.finished =>
+        ('Finalizado', AppColors.statusFinished.withValues(alpha: 0.16), AppColors.statusFinished),
       EventStatus.archived => ('Archivado', cs.errorContainer, cs.onErrorContainer),
     };
   }

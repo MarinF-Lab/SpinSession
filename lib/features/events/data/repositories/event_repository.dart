@@ -56,6 +56,18 @@ class EventRepository {
   Future<void> saveSettings(EventSettingsEntity settings) =>
       _local.upsertSettings(settings);
 
+  Future<void> pullFromRemote(String userId) async {
+    try {
+      final remoteEvents = await _remote.getAll(userId);
+      for (final event in remoteEvents) {
+        await _local.upsert(event.copyWith(synced: true));
+      }
+    } catch (error) {
+      AppLogger.warning(
+          'EventSync', 'No se pudieron traer eventos remotos: $error');
+    }
+  }
+
   Future<void> syncPending() async {
     final pending = await _local.getPendingSync();
     for (final event in pending) {

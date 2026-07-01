@@ -8,6 +8,8 @@ abstract final class AppRoutes {
   // Main
   static const home = '/home';
   static const settings = '/settings';
+  static const estudioTab = '/estudio';
+  static const registroTab = '/registro';
 
   // Events
   static const calendar = '/calendar';

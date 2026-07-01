@@ -39,6 +39,12 @@ Ejemplo:
 - Sprint 6: `AppLogger` — registro centralizado en memoria (info/warning/error) sin datos sensibles.
 - Sprint 6: manejo global de errores — `runZonedGuarded`, `FlutterError.onError` y `ErrorWidget.builder` con `AppErrorWidget` amigable en vez de la pantalla roja de Flutter.
 - Sprint 6: botón "Abrir estudio" en `EventDetailScreen`, visible solo cuando el evento está `active` — corrige un punto muerto de navegación: el Estudio de grabación (Sprint 3) no tenía forma de alcanzarse desde la UI.
+- Sprint 6: `EventRepository.pullFromRemote()` — trae eventos desde Supabase al dispositivo local; antes la sincronización solo empujaba datos locales, nunca los traía de vuelta, por lo que un dispositivo nuevo nunca veía eventos creados en otro.
+- Sprint 6: `docs/supabase_schema.sql` — script de creación de tablas (`events`, `sessions`, `session_assets`) y bucket de Storage (`spinsession`), ausentes en el proyecto de Supabase desde el inicio (causa raíz de que la sincronización remota nunca funcionara).
+- Diseño: paleta de colores oficial del Design System (morado `#8A2BE2`, secundario `#B894DF`, acento neón `#FF4DDA`) aplicada en `AppColors`/`AppTheme`.
+- Diseño: navegación inferior persistente (`AppBottomNav`) con 4 pestañas — Calendario, Estudio, Registro, Ajustes — reemplazando la pantalla "Inicio" como landing tras el login.
+- Diseño: `EstudioTabScreen` y `RegistroTabScreen` — muestran automáticamente el evento activo del usuario (`activeEventProvider`) sin navegación manual.
+- Diseño: botones, FAB y tarjetas con esquinas redondeadas (pill/16px) y `StatusChip` con colores de estado del mockup (Reservado, Pagado, Activo, Finalizado).
 
 ### Cambiado
 
@@ -52,6 +58,7 @@ Ejemplo:
 
 - Fix: `DateFormat(..., 'es')` lanzaba excepción no capturada (pantalla roja) en Calendario, Detalle de evento y selectores de fecha — faltaba `initializeDateFormatting('es')` en `main.dart`.
 - Sprint 6: eliminado código muerto (`_updateSignedUrlForWhatsapp` no-op) en `TaskQueueService`.
+- Fix: `EventController.syncPending()` nunca se llamaba desde ningún lugar de la app — ahora se dispara junto con `pullFromRemote()` al abrir el Calendario.
 
 ### Eliminado
 

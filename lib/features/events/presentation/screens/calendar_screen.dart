@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../app/router/app_routes.dart';
+import '../../../../../shared/widgets/app_bottom_nav.dart';
 import '../../../../../shared/widgets/empty_state.dart';
 import '../../../../../shared/widgets/event_card.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../domain/entities/event_entity.dart';
 import '../providers/event_providers.dart';
 
@@ -26,6 +28,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final now = DateTime.now();
     _focusedMonth = DateTime(now.year, now.month);
     _selectedDay = DateTime(now.year, now.month, now.day);
+    _syncFromRemote();
+  }
+
+  Future<void> _syncFromRemote() async {
+    final userId = ref.read(currentUserProvider);
+    if (userId == null) return;
+    final repo = ref.read(eventRepositoryProvider);
+    await repo.syncPending();
+    await repo.pullFromRemote(userId);
+    if (mounted) ref.invalidate(eventsForDateProvider);
   }
 
   void _prevMonth() => setState(() {
@@ -95,6 +107,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         icon: const Icon(Icons.add),
         label: const Text('Nuevo evento'),
       ),
+      bottomNavigationBar: const AppBottomNav(current: AppTab.calendario),
     );
   }
 }

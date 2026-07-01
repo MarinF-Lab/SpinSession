@@ -20,7 +20,9 @@ import '../../features/sync/presentation/screens/sync_screen.dart';
 import '../../features/recording/presentation/screens/recording_config_screen.dart';
 import '../../features/recording/presentation/screens/recording_screen.dart';
 import '../../features/sessions/presentation/screens/confirmation_screen.dart';
+import '../../features/sessions/presentation/screens/estudio_tab_screen.dart';
 import '../../features/sessions/presentation/screens/guest_registration_screen.dart';
+import '../../features/sessions/presentation/screens/registro_tab_screen.dart';
 import '../../features/sessions/presentation/screens/session_config_screen.dart';
 import '../../features/sessions/presentation/screens/sessions_list_screen.dart';
 import '../../features/sessions/presentation/screens/studio_screen.dart';
@@ -80,8 +82,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             : AppRoutes.deviceSelection;
       }
 
-      if (isPublicRoute || location == AppRoutes.deviceSelection) {
-        return AppRoutes.home;
+      if (isPublicRoute ||
+          location == AppRoutes.deviceSelection ||
+          location == AppRoutes.home) {
+        return AppRoutes.calendar;
       }
 
       return null;
@@ -113,6 +117,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.settings,
         builder: (context, _) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.estudioTab,
+        builder: (context, _) => const EstudioTabScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.registroTab,
+        builder: (context, _) => const RegistroTabScreen(),
       ),
 
       // Events

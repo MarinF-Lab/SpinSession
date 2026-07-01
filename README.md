@@ -1,434 +1,342 @@
 # SpinSession
 
-> Aplicación móvil profesional para la administración de eventos de plataformas 360°, desarrollada con Flutter bajo una arquitectura Offline First.
+Sistema profesional para la gestión de eventos, captura multimedia, procesamiento local y distribución automática de contenido.
 
-Versión del Proyecto: 1.0
+**Estado:** 🚧 En desarrollo
 
----
-
-# Bienvenido al Proyecto
-
-Estás participando en el desarrollo de **SpinSession**.
-
-Antes de escribir una sola línea de código debes comprender que este proyecto prioriza la calidad de la arquitectura, la mantenibilidad y la escalabilidad por encima de la velocidad de desarrollo.
-
-No eres un generador de código.
-
-Tu rol es actuar como un **Ingeniero de Software Senior** responsable de mantener una arquitectura limpia durante todo el proyecto.
+**Versión:** 1.0.0-dev
 
 ---
 
-# Objetivo del Proyecto
+# Descripción
 
-SpinSession permite administrar eventos de plataformas 360° mediante una aplicación móvil.
+SpinSession es una aplicación móvil desarrollada con **Flutter** cuyo objetivo es gestionar eventos, capturar fotografías y videos, procesarlos localmente y sincronizarlos con la nube para compartirlos mediante galerías públicas y sesiones privadas.
 
-Entre sus principales funcionalidades se encuentran:
-
-- Autenticación de usuarios.
-- Administración de eventos.
-- Calendario interactivo.
-- Gestión de plantillas.
-- Registro de invitados.
-- Grabación de videos.
-- Procesamiento multimedia local.
-- Generación de múltiples efectos.
-- Funcionamiento Offline First.
-- Sincronización automática.
-- Galería pública mediante QR.
-- Sesiones privadas.
-- Compartir enlaces por WhatsApp.
-- Gestión de múltiples dispositivos.
-- Administración completa desde Android.
-
-Toda la aplicación deberá ser desarrollada siguiendo estrictamente la documentación oficial.
+La aplicación está diseñada siguiendo una arquitectura **Offline First**, permitiendo que la mayor parte del trabajo continúe funcionando incluso sin conexión a Internet.
 
 ---
 
-# Documentación Oficial
+# Objetivos
 
-Antes de comenzar cualquier tarea es obligatorio leer completamente los siguientes documentos.
-
-1. README.md
-2. PRD.md
-3. ANEXO_TECNICO.md
-4. CODING_RULES.md
-5. Sprint correspondiente
-
-No comenzar el desarrollo sin haber leído todos estos documentos.
+- Gestión profesional de eventos.
+- Captura multimedia.
+- Procesamiento local mediante FFmpeg.
+- Sincronización inteligente con Supabase.
+- Distribución mediante QR y WhatsApp.
+- Arquitectura modular y escalable.
 
 ---
 
-# Jerarquía de la Documentación
+# Tecnologías
 
-Si dos documentos parecen entrar en conflicto, deberá respetarse el siguiente orden de prioridad.
+## Frontend
 
-1. PRD.md
-2. ANEXO_TECNICO.md
-3. CODING_RULES.md
-4. Sprint correspondiente
+- Flutter
+- Dart
 
-Nunca modificar la arquitectura para adaptarla al código.
+## Gestión de Estado
 
-Siempre adaptar el código a la arquitectura.
+- Riverpod
 
----
+## Base de Datos Local
 
-# Tecnologías Oficiales
+- Drift
 
-Framework
+## Backend
 
-Flutter
+- Supabase
+- Supabase Storage
 
-Lenguaje
+## Procesamiento Multimedia
 
-Dart
+- FFmpeg Kit
 
-Gestión de Estado
+## Control de Versiones
 
-Riverpod
-
-Navegación
-
-GoRouter
-
-Base de datos local
-
-Drift (SQLite)
-
-Backend
-
-Supabase
-
-Storage
-
-Supabase Storage
-
-Procesamiento Multimedia
-
-FFmpeg Kit
-
-Lectura QR
-
-Mobile Scanner
-
-Generación QR
-
-qr_flutter
-
-Arquitectura
-
-Feature First
-
-Offline First
-
-MVVM
-
-Repository Pattern
-
-SOLID
+- Git
+- GitHub
 
 ---
 
-# Filosofía del Proyecto
+# Requisitos
 
-SpinSession se construye siguiendo los siguientes principios.
+Antes de ejecutar el proyecto se requiere tener instalado:
 
-- Offline First.
-- Feature First.
-- Código reutilizable.
-- Alta cohesión.
-- Bajo acoplamiento.
-- Arquitectura modular.
-- Responsabilidad única.
-- Procesamiento local.
-- Sincronización diferida.
-- Escalabilidad.
+- Flutter SDK
+- Android SDK
+- Git
+- Visual Studio Code
+- Android Studio (solo para administrar el SDK)
 
-Toda decisión deberá respetar estos principios.
+Verificar instalación:
 
----
-
-# Flujo Oficial de Trabajo
-
-Para cada Sprint deberá seguirse exactamente el siguiente procedimiento.
-
-1.
-
-Leer el Sprint completo.
-
-2.
-
-Analizar el impacto de las tareas.
-
-3.
-
-Revisar la arquitectura existente.
-
-4.
-
-Reutilizar componentes cuando sea posible.
-
-5.
-
-Implementar únicamente lo solicitado.
-
-6.
-
-Corregir errores de compilación.
-
-7.
-
-Verificar funcionamiento.
-
-8.
-
-Refactorizar si es necesario.
-
-9.
-
-Finalizar únicamente cuando todos los criterios de aceptación se cumplan.
-
----
-
-# Restricciones Generales
-
-Está prohibido:
-
-- Inventar funcionalidades.
-- Modificar el PRD.
-- Cambiar la arquitectura.
-- Duplicar código.
-- Crear dependencias innecesarias.
-- Saltarse un Sprint.
-- Crear soluciones temporales.
-- Dejar TODOs.
-- Dejar código comentado.
-- Desactivar validaciones.
-- Romper compatibilidad con Android.
-
----
-
-# Forma Correcta de Pensar
-
-Antes de implementar cualquier cambio debes responder mentalmente las siguientes preguntas.
-
-¿Existe ya una solución?
-
-¿Existe un Widget similar?
-
-¿Existe un Service?
-
-¿Existe un Repository?
-
-¿Existe un Provider?
-
-¿Existe un componente reutilizable?
-
-Si la respuesta es sí, deberá reutilizarse.
-
----
-
-# Forma Incorrecta de Trabajar
-
-Nunca:
-
-Crear una nueva clase cuando ya exista una equivalente.
-
-Copiar código.
-
-Modificar varias Features para solucionar un problema localizado.
-
-Agregar paquetes innecesarios.
-
-Crear Widgets gigantes.
-
-Crear archivos excesivamente largos.
-
----
-
-# Organización del Proyecto
-
-La estructura oficial será:
-
-```text
-lib/
-
-core/
-
-shared/
-
-features/
-
-auth/
-
-calendar/
-
-events/
-
-recording/
-
-processing/
-
-gallery/
-
-sessions/
-
-sync/
-
-settings/
-
-spinlab/
-
-templates/
-
-main.dart
+```bash
+flutter doctor
 ```
 
-No modificar esta estructura.
+Todos los componentes deben aparecer correctamente configurados.
 
 ---
 
-# Definición de Terminado (Definition of Done)
+# Primer Inicio
 
-Una tarea únicamente podrá considerarse terminada cuando:
+Instalar dependencias:
 
-✓ Compila.
+```bash
+flutter pub get
+```
 
-✓ No existen errores.
+Ejecutar la aplicación:
 
-✓ No existen warnings importantes.
+```bash
+flutter run
+```
 
-✓ Funciona correctamente.
+Compilar APK:
 
-✓ Respeta el PRD.
+```bash
+flutter build apk
+```
 
-✓ Respeta el Anexo Técnico.
+Compilar Android App Bundle:
 
-✓ Respeta las Coding Rules.
-
-✓ No rompe funcionalidades existentes.
-
-✓ Mantiene compatibilidad Android.
-
-✓ Mantiene compatibilidad futura con iOS.
-
-✓ Mantiene modo claro.
-
-✓ Mantiene modo oscuro.
-
-✓ El código es legible.
-
-✓ El código es reutilizable.
-
-✓ No existen TODOs.
-
-✓ No existen comentarios innecesarios.
+```bash
+flutter build appbundle
+```
 
 ---
 
-# Qué Espero de la IA
+# Flujo de Trabajo
 
-Quiero que trabajes como un desarrollador Senior.
+Actualizar el repositorio:
 
-No quiero soluciones rápidas.
+```bash
+git pull
+```
 
-No quiero hacks.
+Guardar cambios:
 
-No quiero código temporal.
-
-No quiero código duplicado.
-
-Quiero una arquitectura limpia.
-
-Quiero componentes reutilizables.
-
-Quiero funciones pequeñas.
-
-Quiero código profesional.
-
----
-
-# Checklist Antes de Finalizar una Tarea
-
-Antes de entregar cualquier implementación verifica:
-
-□ El proyecto compila.
-
-□ No existen errores.
-
-□ No existen excepciones.
-
-□ La UI funciona.
-
-□ La navegación funciona.
-
-□ No existen imports innecesarios.
-
-□ No existen dependencias innecesarias.
-
-□ Se reutilizaron componentes existentes.
-
-□ El código cumple SOLID.
-
-□ El código cumple DRY.
-
-□ El código cumple KISS.
-
-□ La Feature continúa siendo independiente.
-
-□ No se rompió ninguna otra funcionalidad.
-
----
-
-# Flujo de Commits Recomendado
-
-Cada funcionalidad deberá desarrollarse mediante commits pequeños y descriptivos.
+```bash
+git add .
+git commit -m "tipo: descripción"
+git push
+```
 
 Ejemplos:
 
-feat(auth): implement login screen
+```text
+feat: create event module
 
-feat(theme): add dark mode
+fix: resolve camera initialization
 
-feat(events): create event repository
+refactor: simplify task queue
 
-fix(sync): retry failed uploads
+docs: update sprint 2
 
-refactor(shared): simplify custom button
-
-Evitar commits masivos.
-
----
-
-# Calidad del Código
-
-La calidad tiene prioridad sobre la velocidad.
-
-Es preferible escribir menos código, pero correctamente estructurado, que implementar rápidamente una solución difícil de mantener.
-
-Cuando existan varias soluciones posibles, elegir siempre la más simple, mantenible y consistente con la arquitectura oficial.
+chore: upgrade dependencies
+```
 
 ---
 
-# Inicio del Desarrollo
+# Estructura del Proyecto
 
-Antes de comenzar cualquier Sprint debes confirmar que:
+```text
+SpinSession/
 
-- Has leído este README.
-- Has leído el PRD completo.
-- Has leído el Anexo Técnico completo.
-- Has leído las Coding Rules.
-- Comprendes el Sprint actual.
-- No implementarás funcionalidades fuera del Sprint.
+android/
+ios/
+linux/
+macos/
+windows/
+web/
 
-Solo entonces podrás comenzar el desarrollo.
+assets/
+docs/
+lib/
+test/
+
+.github/
+
+README.md
+PRD.md
+CHANGELOG.md
+LICENSE
+
+pubspec.yaml
+analysis_options.yaml
+```
 
 ---
 
-# Objetivo Final
+# Documentación
 
-El objetivo de SpinSession no es únicamente desarrollar una aplicación funcional.
+Toda la documentación del proyecto se encuentra dentro de la carpeta **docs/**.
 
-El objetivo es construir un software profesional, robusto, escalable y mantenible, preparado para evolucionar durante años sin necesidad de rediseñar su arquitectura.
+Documentos principales:
 
-Toda decisión técnica deberá tomarse pensando en el largo plazo.
+- PRD
+- ANEXO_TECNICO
+- CODING_RULES
+- ARCHITECTURE_DECISIONS
+- TASK_TYPES
+- SPRINT_1
+- SPRINT_2
+- SPRINT_3
+- SPRINT_4
+- SPRINT_5
+- SPRINT_6
+- SPRINT_7
+
+Antes de implementar cualquier funcionalidad deberá revisarse la documentación correspondiente.
+
+---
+
+# Flujo de Trabajo con IA
+
+Reglas obligatorias para cualquier sesión de trabajo asistido por IA en este proyecto:
+
+1. Antes de comenzar a trabajar, leer este README y los documentos adjuntos en `DOCS/`.
+2. Al finalizar una tarea, registrar el avance en `CHANGELOG.md` y volver a leer este README antes de la siguiente acción.
+3. La misión es codificar de manera correcta, usando todas las herramientas disponibles.
+4. Los resúmenes deben ser breves: solo errores, aciertos, cómo se arreglaron, y qué quedó listo. Sin explicaciones de más.
+5. No usar los emuladores repetidamente para verificar cada cambio menor — consume tiempo y baja la calidad de la codificación.
+6. Usar las herramientas y agentes de Gstack para corroborar el funcionamiento del código.
+7. Una vez que todos los sprints estén listos, se probará el funcionamiento en los emuladores con guía directa del usuario para corregir bugs y fallos.
+8. Una vez terminado el código base, se implementarán los diseños visuales finales.
+
+---
+
+# Orden de Desarrollo
+
+El desarrollo del proyecto seguirá estrictamente el siguiente orden:
+
+```text
+PRD
+
+↓
+
+Anexo Técnico
+
+↓
+
+Coding Rules
+
+↓
+
+Sprint correspondiente
+
+↓
+
+Implementación
+
+↓
+
+Pruebas
+
+↓
+
+Commit
+
+↓
+
+Siguiente Sprint
+```
+
+No deben implementarse funcionalidades pertenecientes a Sprints posteriores.
+
+---
+
+# Principios del Proyecto
+
+- Offline First.
+- Clean Architecture.
+- Arquitectura modular.
+- Bajo acoplamiento.
+- Alta cohesión.
+- Procesamiento local antes que remoto.
+- Componentes reutilizables.
+- Código documentado.
+- Una única responsabilidad por clase.
+- Calidad antes que velocidad.
+
+---
+
+# Estado Actual
+
+## Documentación
+
+- ✅ PRD finalizado.
+- ✅ Anexo Técnico finalizado.
+- ✅ Coding Rules finalizadas.
+- ✅ Sprints definidos.
+
+## Infraestructura
+
+- ✅ Repositorio GitHub.
+- ✅ Proyecto Flutter inicializado.
+- ✅ Android SDK configurado.
+
+## Desarrollo
+
+### Sprint 1 — Completado ✅
+
+- ✅ Inicialización de Supabase con credenciales de desarrollo.
+- ✅ Fuente Poppins integrada.
+- ✅ Guards de navegación con GoRouter (auth + device mode).
+- ✅ AppDatabase con Drift (tablas base).
+- ✅ Tema global con Material 3.
+
+### Sprint 2 — Completado ✅
+
+- ✅ Tablas Drift: eventos, plantillas, configuración de evento, sync jobs.
+- ✅ Entidades de dominio: EventEntity, TemplateEntity, EventStatus, PaymentStatus.
+- ✅ Repositorios: EventRepository (Offline First + sync background), TemplateRepository.
+- ✅ Datasources locales (Drift) y remotos (Supabase) para eventos y plantillas.
+- ✅ Providers y controllers: EventController, TemplatesController con Riverpod.
+- ✅ Widgets compartidos: DatePickerField, TimePickerField, StatusChip, EventCard.
+- ✅ Pantallas: CalendarScreen, CreateEventScreen, EventDetailScreen, EditEventScreen, HistoryScreen, TemplatesScreen, CreateTemplateScreen.
+- ✅ Rutas GoRouter actualizadas con todas las pantallas del Sprint 2.
+- ✅ `flutter analyze` sin errores.
+
+### Sprint 3 — Completado ✅
+
+- ✅ Tablas Drift: sessions, session_assets, recording_configs (schemaVersion → 3).
+- ✅ Entidades de dominio: SessionStatus, SessionEntity, SessionAssetEntity, RecordingConfigEntity.
+- ✅ Repositorios: SessionRepository, RecordingConfigRepository (Offline First).
+- ✅ CameraService: permisos, inicialización, grabación start/stop.
+- ✅ Controllers: SessionController (CRUD sesiones), RecordingController (countdown, grab, takes).
+- ✅ Estudio de grabación (StudioScreen) con validación de acceso (activo + pagado + en horario).
+- ✅ Modos Operator/Camera/Both correctamente implementados.
+- ✅ Formulario de registro de invitado con validación.
+- ✅ Configuración general de grabación (RecordingConfigScreen).
+- ✅ Configuración individual por sesión (SessionConfigScreen).
+- ✅ Pantalla de grabación con cámara en vivo, cuenta regresiva y múltiples tomas.
+- ✅ Pantalla de confirmación (confirmar / agregar toma / repetir / cancelar).
+- ✅ Registro de sesiones (SessionsListScreen).
+- ✅ SpinLab completamente funcional (modo prueba sin persistencia, auto-limpieza).
+- ✅ Rutas GoRouter actualizadas con todas las pantallas del Sprint 3.
+- ✅ `flutter analyze` sin errores ni warnings.
+
+Próximo objetivo:
+
+**Implementar Sprint 4.**
+
+---
+
+# Licencia
+
+Este proyecto corresponde a un software propietario.
+
+Todos los derechos reservados.
+
+Consultar el archivo **LICENSE** para conocer los términos de uso y distribución.
+
+---
+
+# Autor
+
+**Isaac Marin**
+
+Proyecto desarrollado como software propietario.
+
+© 2026 Isaac Marin. Todos los derechos reservados.

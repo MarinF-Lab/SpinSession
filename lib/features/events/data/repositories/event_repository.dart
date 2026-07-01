@@ -60,6 +60,11 @@ class EventRepository {
     try {
       final remoteEvents = await _remote.getAll(userId);
       for (final event in remoteEvents) {
+        final localEvent = await _local.getById(event.id);
+        // Si existe una edición local aún no sincronizada, no la
+        // sobrescribas: se perdería para siempre (quedaría marcada
+        // synced=true sin haber llegado realmente al servidor).
+        if (localEvent != null && !localEvent.synced) continue;
         await _local.upsert(event.copyWith(synced: true));
       }
     } catch (error) {

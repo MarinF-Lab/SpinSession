@@ -22,6 +22,14 @@ class RegistroTabScreen extends ConsumerStatefulWidget {
 class _RegistroTabScreenState extends ConsumerState<RegistroTabScreen> {
   String? _loadedEventId;
   _Filter _filter = _Filter.todos;
+  bool _searching = false;
+  final _searchCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +63,7 @@ class _RegistroTabScreenState extends ConsumerState<RegistroTabScreen> {
         .where((s) => s.status == SessionStatus.sent || s.status == SessionStatus.completed)
         .length;
 
+    final query = _searchCtrl.text.trim().toLowerCase();
     final filtered = switch (_filter) {
       _Filter.todos => sessions,
       _Filter.pendientes => sessions
@@ -63,16 +72,30 @@ class _RegistroTabScreenState extends ConsumerState<RegistroTabScreen> {
       _Filter.enviadas => sessions
           .where((s) => s.status == SessionStatus.sent || s.status == SessionStatus.completed)
           .toList(),
-    };
+    }.where((s) => query.isEmpty || s.guestName.toLowerCase().contains(query)).toList();
 
     return Scaffold(
       appBar: AppBar(
         leading: const Icon(Icons.menu_outlined),
-        title: const Text('Registro'),
+        title: _searching
+            ? TextField(
+                controller: _searchCtrl,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'Buscar invitado…',
+                  border: InputBorder.none,
+                ),
+                onChanged: (_) => setState(() {}),
+              )
+            : const Text('Registro'),
         actions: [
-          IconButton(icon: const Icon(Icons.search_outlined), onPressed: () {}),
           IconButton(
-              icon: const Icon(Icons.filter_list_outlined), onPressed: () {}),
+            icon: Icon(_searching ? Icons.close : Icons.search_outlined),
+            onPressed: () => setState(() {
+              _searching = !_searching;
+              if (!_searching) _searchCtrl.clear();
+            }),
+          ),
         ],
       ),
       body: sessionState.isLoading

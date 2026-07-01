@@ -63,6 +63,10 @@ Ejemplo:
 - Fix: `DateFormat(..., 'es')` lanzaba excepción no capturada (pantalla roja) en Calendario, Detalle de evento y selectores de fecha — faltaba `initializeDateFormatting('es')` en `main.dart`.
 - Sprint 6: eliminado código muerto (`_updateSignedUrlForWhatsapp` no-op) en `TaskQueueService`.
 - Fix: `EventController.syncPending()` nunca se llamaba desde ningún lugar de la app — ahora se dispara junto con `pullFromRemote()` al abrir el Calendario.
+- Fix (revisión de código): `pullFromRemote()` podía sobrescribir y marcar como sincronizado un evento local con cambios pendientes aún no confirmados en Supabase, perdiéndolos para siempre. Ahora se omite el pull si el evento local tiene `synced == false`.
+- Fix (revisión de código): botones de búsqueda y filtro en `RegistroTabScreen` no hacían nada al tocarlos. Se implementó búsqueda real por nombre de invitado y se quitó el ícono de filtro redundante (los chips ya filtran).
+
+**Sprint 6 cerrado.** Próximo: Sprint 7 (Release, Publicación y Cierre del Proyecto).
 
 ### Eliminado
 

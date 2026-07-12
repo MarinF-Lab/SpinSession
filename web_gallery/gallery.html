@@ -130,7 +130,7 @@
     </div>
   </main>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script id="sb-cdn" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
   // Misma URL/anon key que usa la app (SupabaseConfig) — la anon key ya es
   // pública en el APK, no es un secreto nuevo.
@@ -138,8 +138,6 @@
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xaXpkb2dqa3R4dmVicWxwdXRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3ODI3NTAsImV4cCI6MjA5ODM1ODc1MH0.trrFileHKzVEhY9S2uQni0aIMrsLAUaXwMC1dcOzDY8";
   const BUCKET = "spinsession";
   const SIGNED_URL_TTL = 3600;
-
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const contentEl = document.getElementById("content");
   const eventNameEl = document.getElementById("event-name");
@@ -162,14 +160,14 @@
     return url.toString();
   }
 
-  async function loadGallery() {
+  async function loadGallery(supabaseClient) {
     const eventId = new URLSearchParams(window.location.search).get("event");
     if (!eventId) {
       showError("Falta el identificador del evento en el link.");
       return;
     }
 
-    const { data: event, error: eventError } = await supabase
+    const { data: event, error: eventError } = await supabaseClient
       .from("events")
       .select("id, name, event_date, payment_status")
       .eq("id", eventId)
@@ -187,7 +185,7 @@
       ? `Galería pública · ${eventDate.toLocaleDateString("es-AR", { day: "2-digit", month: "long", year: "numeric" })}`
       : "Galería pública";
 
-    const { data: sessions, error: sessionsError } = await supabase
+    const { data: sessions, error: sessionsError } = await supabaseClient
       .from("sessions")
       .select("id, guest_name, created_at")
       .eq("event_id", eventId)
@@ -199,7 +197,7 @@
     }
 
     const sessionIds = sessions.map((s) => s.id);
-    const { data: assets } = await supabase
+    const { data: assets } = await supabaseClient
       .from("session_assets")
       .select("session_id, remote_path, asset_type")
       .in("session_id", sessionIds);
@@ -217,7 +215,7 @@
 
       let thumbHtml = `<div class="thumb placeholder">🎬</div>`;
       if (thumbnail) {
-        const { data: signed } = await supabase.storage
+        const { data: signed } = await supabaseClient.storage
           .from(BUCKET)
           .createSignedUrl(thumbnail.remote_path, SIGNED_URL_TTL);
         if (signed?.signedUrl) {
@@ -241,10 +239,30 @@
     contentEl.innerHTML = `<div class="grid">${cards.join("")}</div>`;
   }
 
-  loadGallery().catch((err) => {
-    console.error(err);
-    showError("No pudimos cargar la galería. Probá de nuevo en un momento.");
-  });
+  function boot() {
+    if (!window.supabase) {
+      showError("No pudimos cargar la librería necesaria. Revisá tu conexión e intentá de nuevo.");
+      return;
+    }
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    loadGallery(supabaseClient).catch((err) => {
+      console.error(err);
+      showError("No pudimos cargar la galería. Probá de nuevo en un momento.");
+    });
+  }
+
+  // No asumimos que el <script src> del CDN ya terminó de cargar y ejecutar
+  // para cuando llega este bloque (en redes lentas puede tardar) — esperamos
+  // su propio evento load/error en vez de depender del orden de parseo.
+  if (window.supabase) {
+    boot();
+  } else {
+    const sbScript = document.getElementById("sb-cdn");
+    sbScript.addEventListener("load", boot);
+    sbScript.addEventListener("error", () =>
+      showError("No pudimos cargar la librería necesaria. Revisá tu conexión e intentá de nuevo.")
+    );
+  }
 </script>
 </body>
 </html>

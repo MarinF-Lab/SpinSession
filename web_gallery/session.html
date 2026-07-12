@@ -127,7 +127,7 @@
     </div>
   </main>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script id="sb-cdn" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
   // Misma URL/anon key que usa la app (SupabaseConfig) — la anon key ya es
   // pública en el APK, no es un secreto nuevo.
@@ -150,8 +150,6 @@
     "generate_burst",
     "generate_thumbnail",
   ];
-
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const contentEl = document.getElementById("content");
   const guestNameEl = document.getElementById("guest-name");
@@ -179,14 +177,14 @@
     return `${guest}_toma${takeNumber}_${label}.${ext}`;
   }
 
-  async function loadSession() {
+  async function loadSession(supabaseClient) {
     const sessionId = new URLSearchParams(window.location.search).get("session");
     if (!sessionId) {
       showError("Falta el identificador de la sesión en el link.");
       return;
     }
 
-    const { data: session, error: sessionError } = await supabase
+    const { data: session, error: sessionError } = await supabaseClient
       .from("sessions")
       .select("id, guest_name, event_id")
       .eq("id", sessionId)
@@ -197,7 +195,7 @@
       return;
     }
 
-    const { data: event } = await supabase
+    const { data: event } = await supabaseClient
       .from("events")
       .select("name")
       .eq("id", session.event_id)
@@ -206,7 +204,7 @@
     guestNameEl.textContent = session.guest_name ? `¡Hola, ${session.guest_name}!` : "Tu sesión";
     eventSubEl.textContent = event?.name ? `Tus videos de "${event.name}"` : "Tus videos";
 
-    const { data: assets } = await supabase
+    const { data: assets } = await supabaseClient
       .from("session_assets")
       .select("remote_path, asset_type, take_number")
       .eq("session_id", sessionId);
@@ -224,7 +222,7 @@
     });
 
     const cards = await Promise.all(takes.map(async (asset) => {
-      const { data: signed } = await supabase.storage
+      const { data: signed } = await supabaseClient.storage
         .from(BUCKET)
         .createSignedUrl(asset.remote_path, SIGNED_URL_TTL);
 
@@ -250,10 +248,30 @@
     contentEl.innerHTML = `<div class="takes">${cards.join("")}</div>`;
   }
 
-  loadSession().catch((err) => {
-    console.error(err);
-    showError("No pudimos cargar tu sesión. Probá de nuevo en un momento.");
-  });
+  function boot() {
+    if (!window.supabase) {
+      showError("No pudimos cargar la librería necesaria. Revisá tu conexión e intentá de nuevo.");
+      return;
+    }
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    loadSession(supabaseClient).catch((err) => {
+      console.error(err);
+      showError("No pudimos cargar tu sesión. Probá de nuevo en un momento.");
+    });
+  }
+
+  // No asumimos que el <script src> del CDN ya terminó de cargar y ejecutar
+  // para cuando llega este bloque (en redes lentas puede tardar) — esperamos
+  // su propio evento load/error en vez de depender del orden de parseo.
+  if (window.supabase) {
+    boot();
+  } else {
+    const sbScript = document.getElementById("sb-cdn");
+    sbScript.addEventListener("load", boot);
+    sbScript.addEventListener("error", () =>
+      showError("No pudimos cargar la librería necesaria. Revisá tu conexión e intentá de nuevo.")
+    );
+  }
 </script>
 </body>
 </html>

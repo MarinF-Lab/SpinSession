@@ -157,10 +157,20 @@ class TaskQueueService {
   Future<bool> _executeUploadAsset(ProcessingJobEntity job) async {
     final localPath = job.payload['localPath'] as String?;
     final remotePath = job.payload['remotePath'] as String?;
+    final assetType = job.payload['jobType'] as String?;
+    final takeNumber = job.payload['takeNumber'] as int?;
     if (localPath == null || remotePath == null) return false;
 
     await _updateProgress(job.id, 0.1);
     await _storage.uploadFile(localPath, remotePath);
+    await _sync.syncAsset(
+      id: job.assetId ?? job.id,
+      sessionId: job.sessionId,
+      localPath: localPath,
+      remotePath: remotePath,
+      assetType: assetType ?? 'unknown',
+      takeNumber: takeNumber ?? 1,
+    );
     await _updateProgress(job.id, 1.0);
     return true;
   }
@@ -182,7 +192,8 @@ class TaskQueueService {
     final sessionId = job.payload['sessionId'] as String?;
     if (sessionId == null) return false;
 
-    // Genera URL firmada del thumbnail principal como acceso privado
+    // Verifica que el thumbnail ya esté disponible en Storage antes de
+    // marcar la sesión como lista — session.html arma la página en vivo.
     try {
       await _storage.createSignedUrl('sessions/$sessionId/1/thumbnail.jpg');
       await _repo.updateStatus(job.id, JobStatus.running);
@@ -197,8 +208,8 @@ class TaskQueueService {
   }
 
   Future<bool> _executeGenerateGallery(ProcessingJobEntity job) async {
-    // La galería pública se genera en Supabase en Sprint 6 (web app)
-    // En Sprint 5 simplemente marcamos el evento como listo para galería
+    // gallery.html arma la galería en vivo (consulta Supabase al abrirse),
+    // no hace falta pre-generar nada del lado del dispositivo.
     return true;
   }
 
@@ -209,25 +220,10 @@ class TaskQueueService {
     final sessionId = job.payload['sessionId'] as String?;
     if (phone == null || countryCode == null || sessionId == null) return false;
 
-    String signedUrl = '';
-    try {
-      signedUrl = await _storage.createSignedUrl(
-        'sessions/$sessionId/1/slow_motion.mp4',
-      );
-    } catch (_) {
-      try {
-        signedUrl = await _storage.createSignedUrl(
-          'sessions/$sessionId/1/thumbnail.jpg',
-        );
-      } catch (_) {
-        signedUrl = 'https://spinsession.app/session/$sessionId';
-      }
-    }
-
     await _sync.sendWhatsapp(
       phone: phone,
       countryCode: countryCode,
-      signedUrl: signedUrl,
+      sessionId: sessionId,
       guestName: guestName ?? 'invitado',
     );
 

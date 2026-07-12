@@ -56,6 +56,7 @@ class SyncRepository {
           'localPath': localPath,
           'remotePath': remotePath,
           'jobType': job.jobType.value,
+          'takeNumber': takeNumber,
         },
         status: JobStatus.pending,
         createdAt: now,
@@ -104,22 +105,10 @@ class SyncRepository {
       updatedAt: now,
     ));
 
-    // send_whatsapp
-    await _jobDatasource.upsert(ProcessingJobEntity(
-      id: _uuid.v4(),
-      sessionId: sessionId,
-      jobType: JobType.sendWhatsapp,
-      priority: -5,
-      payload: {
-        'sessionId': sessionId,
-        'phone': session.phone,
-        'countryCode': session.countryCode,
-        'guestName': session.guestName,
-      },
-      status: JobStatus.pending,
-      createdAt: now,
-      updatedAt: now,
-    ));
+    // Nota: el envío por WhatsApp ya NO se encola automáticamente. Es una
+    // acción disparada por el usuario (al elegir "esperar y enviar" tras
+    // confirmar, o manualmente desde el Registro), porque el mensaje es
+    // semiautomático y requiere que la app esté en primer plano.
 
     // cleanup_storage
     await _jobDatasource.upsert(ProcessingJobEntity(

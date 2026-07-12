@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Galería — SpinSession</title>
+<meta name="robots" content="noindex" />
+<style>
+  :root {
+    --primary: #8A2BE2;
+    --primary-dark: #B894DF;
+    --accent: #FF4DDA;
+    --bg: #121212;
+    --surface: #1A1A1A;
+    --text: #EDEDED;
+    --muted: #6F6A7C;
+    --error: #BA1A1A;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  header {
+    padding: 28px 20px 16px;
+    text-align: center;
+    background: linear-gradient(180deg, rgba(138,43,226,0.25), transparent);
+  }
+  header .brand {
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  header h1 {
+    margin: 6px 0 4px;
+    font-size: 22px;
+  }
+  header p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 8px 16px 48px;
+  }
+  .state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .state.error { color: var(--error); }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 14px;
+    margin-top: 12px;
+  }
+  .card {
+    background: var(--surface);
+    border-radius: 14px;
+    overflow: hidden;
+    text-decoration: none;
+    color: var(--text);
+    display: block;
+    border: 1px solid rgba(255,255,255,0.06);
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+  .card:active { transform: scale(0.97); }
+  .card:hover { border-color: var(--primary-dark); }
+  .thumb {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    background: #0e0e0e;
+    display: block;
+  }
+  .thumb.placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    color: var(--muted);
+  }
+  .card .meta {
+    padding: 10px 12px;
+  }
+  .card .name {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .card .count {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .spinner {
+    width: 28px;
+    height: 28px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    border: 3px solid rgba(255,255,255,0.15);
+    border-top-color: var(--primary);
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand">SpinSession</div>
+    <h1 id="event-name">Galería</h1>
+    <p id="event-sub">Cargando evento…</p>
+  </header>
+  <main>
+    <div id="content">
+      <div class="state" id="loading">
+        <div class="spinner"></div>
+        Cargando galería…
+      </div>
+    </div>
+  </main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+  // Misma URL/anon key que usa la app (SupabaseConfig) — la anon key ya es
+  // pública en el APK, no es un secreto nuevo.
+  const SUPABASE_URL = "https://oqizdogjktxvebqlputj.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xaXpkb2dqa3R4dmVicWxwdXRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3ODI3NTAsImV4cCI6MjA5ODM1ODc1MH0.trrFileHKzVEhY9S2uQni0aIMrsLAUaXwMC1dcOzDY8";
+  const BUCKET = "spinsession";
+  const SIGNED_URL_TTL = 3600;
+
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const contentEl = document.getElementById("content");
+  const eventNameEl = document.getElementById("event-name");
+  const eventSubEl = document.getElementById("event-sub");
+
+  function escapeHtml(str) {
+    return String(str ?? "").replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    }[c]));
+  }
+
+  function showError(message) {
+    eventSubEl.textContent = "";
+    contentEl.innerHTML = `<div class="state error">${escapeHtml(message)}</div>`;
+  }
+
+  function sessionUrl(sessionId) {
+    const url = new URL("session.html", window.location.href);
+    url.searchParams.set("session", sessionId);
+    return url.toString();
+  }
+
+  async function loadGallery() {
+    const eventId = new URLSearchParams(window.location.search).get("event");
+    if (!eventId) {
+      showError("Falta el identificador del evento en el link.");
+      return;
+    }
+
+    const { data: event, error: eventError } = await supabase
+      .from("events")
+      .select("id, name, event_date, payment_status")
+      .eq("id", eventId)
+      .eq("payment_status", "paid")
+      .maybeSingle();
+
+    if (eventError || !event) {
+      showError("Esta galería no está disponible todavía.");
+      return;
+    }
+
+    eventNameEl.textContent = event.name || "Galería";
+    const eventDate = event.event_date ? new Date(event.event_date) : null;
+    eventSubEl.textContent = eventDate
+      ? `Galería pública · ${eventDate.toLocaleDateString("es-AR", { day: "2-digit", month: "long", year: "numeric" })}`
+      : "Galería pública";
+
+    const { data: sessions, error: sessionsError } = await supabase
+      .from("sessions")
+      .select("id, guest_name, created_at")
+      .eq("event_id", eventId)
+      .order("created_at", { ascending: true });
+
+    if (sessionsError || !sessions || sessions.length === 0) {
+      contentEl.innerHTML = `<div class="state">Todavía no hay sesiones publicadas en este evento.</div>`;
+      return;
+    }
+
+    const sessionIds = sessions.map((s) => s.id);
+    const { data: assets } = await supabase
+      .from("session_assets")
+      .select("session_id, remote_path, asset_type")
+      .in("session_id", sessionIds);
+
+    const assetsBySession = new Map();
+    for (const asset of assets || []) {
+      const list = assetsBySession.get(asset.session_id) || [];
+      list.push(asset);
+      assetsBySession.set(asset.session_id, list);
+    }
+
+    const cards = await Promise.all(sessions.map(async (session) => {
+      const sessionAssets = assetsBySession.get(session.id) || [];
+      const thumbnail = sessionAssets.find((a) => a.asset_type === "generate_thumbnail");
+
+      let thumbHtml = `<div class="thumb placeholder">🎬</div>`;
+      if (thumbnail) {
+        const { data: signed } = await supabase.storage
+          .from(BUCKET)
+          .createSignedUrl(thumbnail.remote_path, SIGNED_URL_TTL);
+        if (signed?.signedUrl) {
+          thumbHtml = `<img class="thumb" src="${escapeHtml(signed.signedUrl)}" alt="${escapeHtml(session.guest_name || "Invitado")}" loading="lazy" />`;
+        }
+      }
+
+      const takeCount = sessionAssets.filter((a) => a.asset_type !== "generate_thumbnail").length;
+
+      return `
+        <a class="card" href="${sessionUrl(session.id)}">
+          ${thumbHtml}
+          <div class="meta">
+            <div class="name">${escapeHtml(session.guest_name || "Invitado")}</div>
+            <div class="count">${takeCount} ${takeCount === 1 ? "toma" : "tomas"}</div>
+          </div>
+        </a>
+      `;
+    }));
+
+    contentEl.innerHTML = `<div class="grid">${cards.join("")}</div>`;
+  }
+
+  loadGallery().catch((err) => {
+    console.error(err);
+    showError("No pudimos cargar la galería. Probá de nuevo en un momento.");
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Tu sesión — SpinSession</title>
+<meta name="robots" content="noindex" />
+<style>
+  :root {
+    --primary: #8A2BE2;
+    --primary-dark: #B894DF;
+    --accent: #FF4DDA;
+    --bg: #121212;
+    --surface: #1A1A1A;
+    --text: #EDEDED;
+    --muted: #6F6A7C;
+    --error: #BA1A1A;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  header {
+    padding: 28px 20px 16px;
+    text-align: center;
+    background: linear-gradient(180deg, rgba(138,43,226,0.25), transparent);
+  }
+  header .brand {
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  header h1 {
+    margin: 6px 0 4px;
+    font-size: 22px;
+  }
+  header p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  main {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 8px 16px 48px;
+  }
+  .state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .state.error { color: var(--error); }
+  .takes {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 16px;
+  }
+  .take {
+    background: var(--surface);
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .take video, .take img {
+    width: 100%;
+    display: block;
+    background: #000;
+    max-height: 70vh;
+  }
+  .take .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+  }
+  .take .label {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .take .label .take-num {
+    color: var(--muted);
+    font-weight: 400;
+    margin-left: 6px;
+  }
+  .take a.download {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 12px;
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .take a.download:active { opacity: 0.7; }
+  .spinner {
+    width: 28px;
+    height: 28px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    border: 3px solid rgba(255,255,255,0.15);
+    border-top-color: var(--primary);
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand">SpinSession</div>
+    <h1 id="guest-name">Tu sesión</h1>
+    <p id="event-sub">Cargando…</p>
+  </header>
+  <main>
+    <div id="content">
+      <div class="state" id="loading">
+        <div class="spinner"></div>
+        Cargando tus videos…
+      </div>
+    </div>
+  </main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+  // Misma URL/anon key que usa la app (SupabaseConfig) — la anon key ya es
+  // pública en el APK, no es un secreto nuevo.
+  const SUPABASE_URL = "https://oqizdogjktxvebqlputj.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xaXpkb2dqa3R4dmVicWxwdXRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3ODI3NTAsImV4cCI6MjA5ODM1ODc1MH0.trrFileHKzVEhY9S2uQni0aIMrsLAUaXwMC1dcOzDY8";
+  const BUCKET = "spinsession";
+  const SIGNED_URL_TTL = 3600;
+
+  const ASSET_LABELS = {
+    generate_slow_motion: "Cámara lenta",
+    generate_reverse: "Reverse",
+    generate_boomerang: "Boomerang",
+    generate_burst: "Ráfaga",
+    generate_thumbnail: "Miniatura",
+  };
+  const ASSET_ORDER = [
+    "generate_slow_motion",
+    "generate_reverse",
+    "generate_boomerang",
+    "generate_burst",
+    "generate_thumbnail",
+  ];
+
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const contentEl = document.getElementById("content");
+  const guestNameEl = document.getElementById("guest-name");
+  const eventSubEl = document.getElementById("event-sub");
+
+  function escapeHtml(str) {
+    return String(str ?? "").replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    }[c]));
+  }
+
+  function showError(message) {
+    eventSubEl.textContent = "";
+    contentEl.innerHTML = `<div class="state error">${escapeHtml(message)}</div>`;
+  }
+
+  function isVideo(remotePath) {
+    return /\.mp4$/i.test(remotePath);
+  }
+
+  function fileNameFor(guestName, takeNumber, assetType) {
+    const label = (ASSET_LABELS[assetType] || "video").toLowerCase().replace(/\s+/g, "_");
+    const guest = (guestName || "invitado").toLowerCase().replace(/\s+/g, "_");
+    const ext = assetType === "generate_thumbnail" ? "jpg" : "mp4";
+    return `${guest}_toma${takeNumber}_${label}.${ext}`;
+  }
+
+  async function loadSession() {
+    const sessionId = new URLSearchParams(window.location.search).get("session");
+    if (!sessionId) {
+      showError("Falta el identificador de la sesión en el link.");
+      return;
+    }
+
+    const { data: session, error: sessionError } = await supabase
+      .from("sessions")
+      .select("id, guest_name, event_id")
+      .eq("id", sessionId)
+      .maybeSingle();
+
+    if (sessionError || !session) {
+      showError("Esta sesión no está disponible todavía.");
+      return;
+    }
+
+    const { data: event } = await supabase
+      .from("events")
+      .select("name")
+      .eq("id", session.event_id)
+      .maybeSingle();
+
+    guestNameEl.textContent = session.guest_name ? `¡Hola, ${session.guest_name}!` : "Tu sesión";
+    eventSubEl.textContent = event?.name ? `Tus videos de "${event.name}"` : "Tus videos";
+
+    const { data: assets } = await supabase
+      .from("session_assets")
+      .select("remote_path, asset_type, take_number")
+      .eq("session_id", sessionId);
+
+    const takes = (assets || []).filter((a) => a.asset_type !== "generate_thumbnail");
+
+    if (takes.length === 0) {
+      contentEl.innerHTML = `<div class="state">Tus videos todavía se están procesando. Volvé a intentar en unos minutos.</div>`;
+      return;
+    }
+
+    takes.sort((a, b) => {
+      if (a.take_number !== b.take_number) return a.take_number - b.take_number;
+      return ASSET_ORDER.indexOf(a.asset_type) - ASSET_ORDER.indexOf(b.asset_type);
+    });
+
+    const cards = await Promise.all(takes.map(async (asset) => {
+      const { data: signed } = await supabase.storage
+        .from(BUCKET)
+        .createSignedUrl(asset.remote_path, SIGNED_URL_TTL);
+
+      if (!signed?.signedUrl) return "";
+
+      const label = ASSET_LABELS[asset.asset_type] || "Video";
+      const media = isVideo(asset.remote_path)
+        ? `<video src="${escapeHtml(signed.signedUrl)}" controls playsinline preload="metadata"></video>`
+        : `<img src="${escapeHtml(signed.signedUrl)}" alt="${escapeHtml(label)}" />`;
+      const downloadName = fileNameFor(session.guest_name, asset.take_number, asset.asset_type);
+
+      return `
+        <div class="take">
+          ${media}
+          <div class="bar">
+            <div class="label">${escapeHtml(label)}<span class="take-num">Toma ${asset.take_number}</span></div>
+            <a class="download" href="${escapeHtml(signed.signedUrl)}" download="${escapeHtml(downloadName)}">Descargar</a>
+          </div>
+        </div>
+      `;
+    }));
+
+    contentEl.innerHTML = `<div class="takes">${cards.join("")}</div>`;
+  }
+
+  loadSession().catch((err) => {
+    console.error(err);
+    showError("No pudimos cargar tu sesión. Probá de nuevo en un momento.");
+  });
+</script>
+</body>
+</html>

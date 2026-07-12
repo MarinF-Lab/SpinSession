@@ -98,3 +98,85 @@ create policy "spinsession_authenticated_all"
   for all
   using (bucket_id = 'spinsession' and auth.role() = 'authenticated')
   with check (bucket_id = 'spinsession' and auth.role() = 'authenticated');
+
+-- ============================================================
+-- Galería web pública + sesión privada (invitados anónimos)
+-- ============================================================
+-- Los invitados abren estas páginas sin loguearse (link de WhatsApp o QR
+-- del evento), así que necesitan lectura anónima — pero SOLO de eventos ya
+-- pagados, y solo lectura (nunca escritura). Todo lo demás sigue igual de
+-- restringido para el rol "anon".
+
+-- events: lectura anónima solo si el evento está pagado
+drop policy if exists "events_public_read_paid" on public.events;
+create policy "events_public_read_paid" on public.events
+  for select
+  to anon
+  using (payment_status = 'paid');
+
+-- sessions: lectura anónima solo si el evento padre está pagado
+drop policy if exists "sessions_public_read_paid_event" on public.sessions;
+create policy "sessions_public_read_paid_event" on public.sessions
+  for select
+  to anon
+  using (
+    exists (
+      select 1 from public.events e
+      where e.id = sessions.event_id
+        and e.payment_status = 'paid'
+    )
+  );
+
+-- session_assets: lectura anónima solo si la sesión pertenece a un evento pagado
+drop policy if exists "session_assets_public_read_paid_event" on public.session_assets;
+create policy "session_assets_public_read_paid_event" on public.session_assets
+  for select
+  to anon
+  using (
+    exists (
+      select 1
+      from public.sessions s
+      join public.events e on e.id = s.event_id
+      where s.id = session_assets.session_id
+        and e.payment_status = 'paid'
+    )
+  );
+
+-- Storage (bucket privado "spinsession"): permite que el navegador del
+-- invitado genere signed URLs de los archivos de una sesión, solo si esa
+-- sesión pertenece a un evento pagado. El path de cada objeto tiene forma
+-- "sessions/<sessionId>/<take>/<archivo>", por eso se extrae el segundo
+-- segmento para el join.
+drop policy if exists "spinsession_public_read_paid_event" on storage.objects;
+create policy "spinsession_public_read_paid_event"
+  on storage.objects
+  for select
+  to anon
+  using (
+    bucket_id = 'spinsession'
+    and exists (
+      select 1
+      from public.sessions s
+      join public.events e on e.id = s.event_id
+      where s.id = split_part(storage.objects.name, '/', 2)
+        and e.payment_status = 'paid'
+    )
+  );
+
+-- ============================================================
+-- Storage bucket: spinsession-web (hosting de gallery.html / session.html)
+-- ============================================================
+-- Bucket público separado del bucket privado de videos. Solo aloja los dos
+-- HTML estáticos de la galería web; cualquiera puede leerlos (son solo
+-- archivos de interfaz, no contienen datos de invitados).
+--
+-- Nota: NO se agrega política de "select" sobre storage.objects para este
+-- bucket. Al ser un bucket público, Supabase ya sirve cualquier objeto por
+-- su URL directa (/storage/v1/object/public/spinsession-web/...) sin pasar
+-- por RLS. Una política de "select" acá solo habilitaría listar todos los
+-- archivos del bucket (operación que no necesitamos, ya que servimos dos
+-- nombres de archivo fijos y conocidos) — Supabase marca esto como riesgo
+-- de exposición innecesaria.
+insert into storage.buckets (id, name, public)
+values ('spinsession-web', 'spinsession-web', true)
+on conflict (id) do nothing;

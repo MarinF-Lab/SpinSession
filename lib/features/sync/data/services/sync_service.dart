@@ -1,12 +1,20 @@
-import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/config/web_gallery_config.dart';
 import '../../../sessions/domain/entities/session_entity.dart';
 
 class SyncService {
   SyncService(this._client);
 
   final SupabaseClient _client;
+
+  /// URL pública de la página web de la sesión privada de un invitado
+  /// (`session.html?session=<id>`), alojada en el bucket público
+  /// `spinsession-web`. Es el único link que se debe compartir por
+  /// WhatsApp o QR para una sesión individual.
+  String buildPrivateSessionUrl(String sessionId) =>
+      WebGalleryConfig.privateSession(sessionId);
 
   Future<void> syncSession(SessionEntity session) async {
     await _client.from('sessions').upsert({
@@ -43,19 +51,29 @@ class SyncService {
   Future<void> sendWhatsapp({
     required String phone,
     required String countryCode,
-    required String signedUrl,
+    required String sessionId,
     required String guestName,
   }) async {
     final cleanCountry = countryCode.replaceAll('+', '');
     final cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
     final message = '¡Hola $guestName! 🎬\n\n'
         'Gracias por participar. Tus videos ya están disponibles.\n\n'
-        'Descárgalos aquí:\n$signedUrl\n\n'
+        'Descárgalos aquí:\n${buildPrivateSessionUrl(sessionId)}\n\n'
         'SpinSession';
 
-    final whatsappUrl =
-        'https://wa.me/$cleanCountry$cleanPhone?text=${Uri.encodeComponent(message)}';
+    final encoded = Uri.encodeComponent(message);
+    // Abre WhatsApp directamente en el chat del invitado. Se intenta primero
+    // el esquema nativo (chat directo) y, si no está disponible, el enlace
+    // web wa.me como respaldo.
+    final nativeUri = Uri.parse(
+        'whatsapp://send?phone=$cleanCountry$cleanPhone&text=$encoded');
+    final webUri =
+        Uri.parse('https://wa.me/$cleanCountry$cleanPhone?text=$encoded');
 
-    await Share.share(whatsappUrl);
+    if (await canLaunchUrl(nativeUri)) {
+      await launchUrl(nativeUri, mode: LaunchMode.externalApplication);
+    } else {
+      await launchUrl(webUri, mode: LaunchMode.externalApplication);
+    }
   }
 }

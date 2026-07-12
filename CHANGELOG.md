@@ -68,10 +68,43 @@ Ejemplo:
 
 **Sprint 6 cerrado.** Próximo: Sprint 7 (Release, Publicación y Cierre del Proyecto).
 
-### Eliminado
+### Corregido (cumplimiento Anexo/Coding Rules)
 
-- Sprint 7: dependencia `mobile_scanner` (nunca usada — la galería solo genera QR, no escanea).
-- Sprint 7: dependencia `connectivity_plus` y `connectivityProvider` (código muerto, sin consumidores).
+- Restauradas `connectivity_plus` y `mobile_scanner` al `pubspec.yaml`: son stack oficial (Anexo A.2.2) y quitarlas violaba las Reglas 26/27 y A.4.20. No eran código muerto sino piezas del stack aún no consumidas.
+- Detección de conexión implementada correctamente en `lib/core/network/connectivity_provider.dart` (responsabilidad del Sync Engine, Anexo A.1.12).
+- Movida la lógica de sincronización fuera de `CalendarScreen` (accedía directo al repositorio, violando la Regla 6 / A.4.5) a `EventController.syncWithRemote()`, que verifica conexión antes de empujar pendientes y traer remotos.
+
+### Corregido (pruebas en dispositivo)
+
+- Bug: los eventos aparecían un día antes de la fecha elegida. Causa: `event_date` (fecha de calendario) se serializaba mezclando hora local con la columna `timestamptz` de Supabase, desplazándose al ida-y-vuelta según la zona horaria. Ahora la fecha viaja como medianoche UTC del día y se lee por componentes año-mes-día; los instantes reales (inicio/fin/timestamps) viajan en UTC y se reconvierten a local.
+- Bug: un evento recién creado no aparecía hasta cerrar y reabrir la app. Causa: `eventsForDateProvider` era un `FutureProvider` cacheado. Ahora deriva del estado del `EventController`, refrescándose al instante tras crear/editar/pagar.
+- Mejora UX: el calendario marca con un punto los días que tienen eventos (`eventDaysProvider`).
+- Mejora UX: al crear un evento ya no se pide la fecha (se usa el día seleccionado en el calendario, mostrado como encabezado de solo lectura).
+- Mejora UX: los selectores de hora abren en modo teclado (`TimePickerEntryMode.input`) — escribir "14:30" en vez del reloj.
+- Bug: al editar un evento, los cambios no se reflejaban al reabrir el detalle. Causa: `eventByIdProvider` era un `FutureProvider` cacheado. Ahora deriva del `EventController` (detalle, edición, estudio y galería actualizados en consecuencia).
+- Bug crítico: la pantalla de grabación quedaba en negro cargando indefinidamente. Causa: `RecordingScreen` nunca llamaba a `initCamera()`. Ahora inicializa la cámara en `initState` con la config del evento (o valores por defecto).
+- Permisos explícitos `CAMERA`, `RECORD_AUDIO` e `INTERNET` en el `AndroidManifest` (evita fallos en build release).
+- Nuevo `PhoneInputField`: selector de país (Chile `+56` por defecto) con prefijo `9` y formato automático `+56 9 xxxx xxxx`. Integrado en el registro de invitado del Estudio.
+- Configuración rápida del Estudio ahora interactiva: Duración y Tomas máx. editables y persistidas por evento. La config nueva genera un id propio al guardarse.
+- Duración de toma ahora es entrada manual (3–300 s) y recuerda el último valor guardado.
+- La grabación se detiene automáticamente al alcanzar la duración configurada (auto-stop timer en `RecordingController`).
+- Bug crítico de procesamiento: los efectos (cámara lenta, reverse, boomerang, ráfaga) siempre fallaban. Causa: se leía `getReturnCode()` justo tras `FFmpegKit.executeAsync`, antes de que el proceso terminara. Ahora un `Completer` espera al callback de finalización antes de evaluar el resultado.
+- Bug: miniatura, cámara lenta, reverse y boomerang fallaban porque su carpeta de salida (`processing/<sesión>/<toma>/`) no existía antes de que FFmpeg escribiera (solo burst la creaba). Ahora se crea la carpeta contenedora antes de cada efecto; esto también desbloquea la "sesión privada", que dependía del thumbnail subido.
+- Envío por WhatsApp ahora abre el chat del invitado directamente (esquema `whatsapp://` con respaldo `wa.me`), en vez del menú de compartir genérico que obligaba a elegir el destinatario. Nueva dependencia `url_launcher` (autorizada) y `<queries>` de WhatsApp en el `AndroidManifest`.
+- Bug: cámara lenta, reverse y boomerang seguían fallando porque el build de FFmpeg no incluye libx264 (GPL) y no se especificaba encoder. Ahora usan el encoder nativo `mpeg4`. Se agregó logging del error real de FFmpeg (`AppLogger.error('FFmpeg', …)`) para diagnóstico.
+- Bug: el límite de tomas por sesión no se respetaba (dejaba agregar tomas de más). Ahora `RecordingController` conoce `maxTakes`, bloquea grabar al alcanzarlo y la pantalla de confirmación oculta "Agregar otra toma".
+- El envío por WhatsApp dejó de encolarse automáticamente en el pipeline y pasó a ser una acción del usuario (semiautomática, requiere primer plano).
+- Al confirmar las tomas ahora se elige: **"Esperar y enviar por WhatsApp"** (procesa y abre el chat al terminar) o **"Procesar en segundo plano"** (vuelve al Estudio para seguir registrando; se envía luego desde el Registro).
+- Registro interactivo: cada sesión abre un detalle (`SessionDetailScreen`) con sus videos, los errores de procesamiento y un botón para **enviar/reenviar por WhatsApp**. Nueva ruta `/session/:id` y `sessionByIdProvider`.
+- Registro: el filtro "Enviadas" ahora cuenta solo las sesiones realmente enviadas (`sent`); las procesadas pero sin enviar quedan como pendientes.
+
+### Cambiado (modos de dispositivo — Fase 1)
+
+- Los modos de dispositivo pasan de 3 a **2**: se elimina "Ambos". Quedan **Operador** (control completo, futuro anfitrión de la cámara) y **Cámara** (solo grabación). El modo Operador cumple el rol del antiguo "Ambos".
+- La barra de navegación inferior ahora depende del modo: Operador ve Calendario/Estudio/Registro/Ajustes; Cámara ve solo Estudio/Ajustes.
+- El arranque enruta según el modo: Cámara entra directo al Estudio; Operador al Calendario.
+- Nota: la vinculación operador↔cámara y la sincronización en tiempo real del evento/cola de invitados quedan para la Fase 2.
+- Ajustes: nueva sección "Dispositivo" con el modo actual, un botón para **cambiar de modo** y una vista de **dispositivos vinculados** (por ahora este dispositivo; la vinculación de cámaras llega en la Fase 2).
 
 ### Sprint 7 (en curso)
 
@@ -81,6 +114,12 @@ Ejemplo:
 - `LICENSE` (software propietario) y versión fijada en `1.0.0+1`.
 - Fix: `test/widget_test.dart` fallaba porque Supabase nunca se inicializaba en el entorno de test, y esperaba el texto `'Iniciar sesion'` sin tilde (ya corregido en Sprint 6).
 - `DOCS/supabase_schema.sql` documentado como referencia de infraestructura.
+- Bug: al cambiar de modo de dispositivo desde Ajustes, el router forzaba el regreso a `/calendar` incluso en modo Cámara, y la selección de modo nunca surtía efecto. Causa: el `redirect` de GoRouter trataba `/device-selection` como una ruta de la que siempre había que salir una vez que existía un modo guardado, y el destino de rebote estaba fijo en `/calendar` sin mirar el modo actual. Ahora `/device-selection` puede revisitarse para cambiar de modo, y el rebote depende del modo (Cámara → Estudio, Operador → Calendario).
+- Galería web pública (`gallery.html`) y sesión privada (`session.html`), alojadas en un nuevo bucket público de Supabase (`spinsession-web`). El QR del evento apunta a la galería pública; el link de WhatsApp ahora apunta a la sesión privada del invitado (antes era una signed URL de un solo archivo, a veces rota).
+- Nuevas políticas RLS anónimas (`events`, `sessions`, `session_assets`, `storage.objects`) que permiten a invitados sin sesión iniciada leer **solo** datos de eventos con `payment_status = 'paid'` — agregado a `DOCS/supabase_schema.sql`.
+- Fix: `SyncService.syncAsset()` nunca se llamaba — `_executeUploadAsset` subía el archivo a Storage pero jamás registraba la fila en la tabla remota `session_assets`, dejando la galería web sin datos. Ahora se registra tras cada subida exitosa.
+- Nueva constante `WebGalleryConfig` (`lib/core/config/web_gallery_config.dart`) centraliza la URL base de la galería web, reemplazando el dominio placeholder `spinsession.app` que estaba repetido (y desactualizado) en tres archivos distintos.
+- Conocido, fuera de este alcance: las fotos de ráfaga (burst) probablemente nunca se suben a Storage porque la comprobación de existencia del archivo local falla para directorios — queda pendiente como tarea aparte.
 
 ---
 

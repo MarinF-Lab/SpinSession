@@ -5,7 +5,11 @@ import '../../../../core/database/app_database.dart';
 import '../../../../core/preferences/local_preferences_repository.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../processing/data/repositories/processing_repository.dart';
-import '../../../processing/presentation/providers/processing_providers.dart';
+import '../../../processing/presentation/providers/processing_providers.dart'
+    show
+        processingRepositoryProvider,
+        taskQueueServiceProvider,
+        syncServiceProvider;
 import '../../data/datasources/session_local_datasource.dart';
 import '../../data/repositories/session_repository.dart';
 import '../../domain/entities/session_asset_entity.dart';
@@ -30,6 +34,12 @@ final sessionsByEventProvider =
     FutureProvider.family<List<SessionEntity>, String>((ref, eventId) async {
   final repo = ref.watch(sessionRepositoryProvider);
   return repo.getByEvent(eventId);
+});
+
+final sessionByIdProvider =
+    FutureProvider.family<SessionEntity?, String>((ref, id) async {
+  final repo = ref.watch(sessionRepositoryProvider);
+  return repo.getById(id);
 });
 
 final sessionAssetsBySessionProvider =
@@ -166,6 +176,29 @@ class SessionController extends StateNotifier<SessionState> {
   Future<void> cancelSession(String id, String eventId) async {
     await _repo.delete(id);
     await loadByEvent(eventId);
+  }
+
+  /// Envía (o reenvía) el enlace de la sesión por WhatsApp abriendo el chat
+  /// del invitado. El link apunta a la página web de la sesión privada
+  /// (`session.html`), que carga sus propias signed URLs al abrirse. Marca
+  /// la sesión como "enviada" al terminar.
+  Future<bool> sendWhatsappForSession(SessionEntity session) async {
+    try {
+      final sync = _ref.read(syncServiceProvider);
+
+      await sync.sendWhatsapp(
+        phone: session.phone,
+        countryCode: session.countryCode,
+        sessionId: session.id,
+        guestName: session.guestName,
+      );
+      await _repo.updateStatus(session.id, SessionStatus.sent);
+      await loadByEvent(session.eventId);
+      return true;
+    } catch (e) {
+      state = state.copyWith(errorMessage: e.toString());
+      return false;
+    }
   }
 
   void clearError() => state = state.copyWith(errorMessage: null);

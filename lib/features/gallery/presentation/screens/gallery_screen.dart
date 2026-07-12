@@ -6,9 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../app/router/app_routes.dart';
+import '../../../../core/config/web_gallery_config.dart';
 import '../../../../shared/widgets/empty_state.dart';
-import '../../../../shared/widgets/error_screen.dart';
-import '../../../../shared/widgets/loading_screen.dart';
 import '../../../events/presentation/providers/event_providers.dart';
 import '../../../sessions/presentation/providers/session_providers.dart';
 
@@ -19,40 +18,36 @@ class GalleryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final eventAsync = ref.watch(eventByIdProvider(eventId));
+    final event = ref.watch(eventByIdProvider(eventId));
     final sessionState = ref.watch(sessionControllerProvider);
 
-    return eventAsync.when(
-      loading: () => const LoadingScreen(),
-      error: (e, _) => ErrorScreen(message: e.toString()),
-      data: (event) => Scaffold(
-        appBar: AppBar(
-          title: Text(event?.name ?? 'Galería'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.qr_code_outlined),
-              tooltip: 'Código QR',
-              onPressed: () => _showQrDialog(context, eventId),
-            ),
-          ],
-        ),
-        body: sessionState.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : sessionState.sessions.isEmpty
-                ? const EmptyState(
-                    icon: Icons.photo_library_outlined,
-                    message: 'No hay sesiones en este evento todavía.',
-                  )
-                : _SessionGrid(
-                    sessions: sessionState.sessions,
-                    eventId: eventId,
-                  ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(event?.name ?? 'Galería'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.qr_code_outlined),
+            tooltip: 'Código QR',
+            onPressed: () => _showQrDialog(context, eventId),
+          ),
+        ],
       ),
+      body: sessionState.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : sessionState.sessions.isEmpty
+              ? const EmptyState(
+                  icon: Icons.photo_library_outlined,
+                  message: 'No hay sesiones en este evento todavía.',
+                )
+              : _SessionGrid(
+                  sessions: sessionState.sessions,
+                  eventId: eventId,
+                ),
     );
   }
 
   void _showQrDialog(BuildContext context, String eventId) {
-    final galleryUrl = 'https://spinsession.app/gallery/$eventId';
+    final galleryUrl = WebGalleryConfig.gallery(eventId);
     showDialog(
       context: context,
       builder: (_) => AlertDialog(

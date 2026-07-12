@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/device_selection/domain/entities/device_mode.dart';
 import '../../features/device_selection/presentation/providers/device_mode_provider.dart';
 import '../../features/device_selection/presentation/screens/device_selection_screen.dart';
 import '../../features/events/presentation/screens/calendar_screen.dart';
@@ -24,6 +25,7 @@ import '../../features/sessions/presentation/screens/estudio_tab_screen.dart';
 import '../../features/sessions/presentation/screens/guest_registration_screen.dart';
 import '../../features/sessions/presentation/screens/registro_tab_screen.dart';
 import '../../features/sessions/presentation/screens/session_config_screen.dart';
+import '../../features/sessions/presentation/screens/session_detail_screen.dart';
 import '../../features/sessions/presentation/screens/sessions_list_screen.dart';
 import '../../features/sessions/presentation/screens/studio_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
@@ -82,10 +84,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             : AppRoutes.deviceSelection;
       }
 
-      if (isPublicRoute ||
-          location == AppRoutes.deviceSelection ||
-          location == AppRoutes.home) {
-        return AppRoutes.calendar;
+      if (isPublicRoute || location == AppRoutes.home) {
+        return deviceModeState.mode == DeviceMode.camera
+            ? AppRoutes.estudioTab
+            : AppRoutes.calendar;
       }
 
       return null;
@@ -134,7 +136,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.eventCreate,
-        builder: (context, _) => const CreateEventScreen(),
+        builder: (context, state) => CreateEventScreen(
+          initialDate: state.extra is DateTime ? state.extra as DateTime : null,
+        ),
       ),
       GoRoute(
         path: '/event/:id',
@@ -213,8 +217,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Processing
       GoRoute(
         path: '/processing/:sessionId',
+        builder: (_, s) => ProcessingScreen(
+          sessionId: s.pathParameters['sessionId']!,
+          autoSendWhatsapp: s.extra == true,
+        ),
+      ),
+      GoRoute(
+        path: '/session/:sessionId',
         builder: (_, s) =>
-            ProcessingScreen(sessionId: s.pathParameters['sessionId']!),
+            SessionDetailScreen(sessionId: s.pathParameters['sessionId']!),
       ),
 
       // Sync

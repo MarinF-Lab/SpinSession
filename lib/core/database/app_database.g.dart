@@ -652,6 +652,17 @@ class $EventsTableTable extends EventsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _paymentLinkMeta = const VerificationMeta(
+    'paymentLink',
+  );
+  @override
+  late final GeneratedColumn<String> paymentLink = GeneratedColumn<String>(
+    'payment_link',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
   @override
   late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
@@ -700,6 +711,7 @@ class $EventsTableTable extends EventsTable
     paymentStatus,
     gallerySlug,
     notes,
+    paymentLink,
     synced,
     createdAt,
     updatedAt,
@@ -808,6 +820,15 @@ class $EventsTableTable extends EventsTable
         notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
       );
     }
+    if (data.containsKey('payment_link')) {
+      context.handle(
+        _paymentLinkMeta,
+        paymentLink.isAcceptableOrUnknown(
+          data['payment_link']!,
+          _paymentLinkMeta,
+        ),
+      );
+    }
     if (data.containsKey('synced')) {
       context.handle(
         _syncedMeta,
@@ -883,6 +904,10 @@ class $EventsTableTable extends EventsTable
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       ),
+      paymentLink: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payment_link'],
+      ),
       synced: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}synced'],
@@ -916,6 +941,7 @@ class EventsTableData extends DataClass implements Insertable<EventsTableData> {
   final String paymentStatus;
   final String gallerySlug;
   final String? notes;
+  final String? paymentLink;
   final bool synced;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -931,6 +957,7 @@ class EventsTableData extends DataClass implements Insertable<EventsTableData> {
     required this.paymentStatus,
     required this.gallerySlug,
     this.notes,
+    this.paymentLink,
     required this.synced,
     required this.createdAt,
     required this.updatedAt,
@@ -952,6 +979,9 @@ class EventsTableData extends DataClass implements Insertable<EventsTableData> {
     map['gallery_slug'] = Variable<String>(gallerySlug);
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
+    }
+    if (!nullToAbsent || paymentLink != null) {
+      map['payment_link'] = Variable<String>(paymentLink);
     }
     map['synced'] = Variable<bool>(synced);
     map['created_at'] = Variable<DateTime>(createdAt);
@@ -976,6 +1006,9 @@ class EventsTableData extends DataClass implements Insertable<EventsTableData> {
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
+      paymentLink: paymentLink == null && nullToAbsent
+          ? const Value.absent()
+          : Value(paymentLink),
       synced: Value(synced),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
@@ -999,6 +1032,7 @@ class EventsTableData extends DataClass implements Insertable<EventsTableData> {
       paymentStatus: serializer.fromJson<String>(json['paymentStatus']),
       gallerySlug: serializer.fromJson<String>(json['gallerySlug']),
       notes: serializer.fromJson<String?>(json['notes']),
+      paymentLink: serializer.fromJson<String?>(json['paymentLink']),
       synced: serializer.fromJson<bool>(json['synced']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -1019,6 +1053,7 @@ class EventsTableData extends DataClass implements Insertable<EventsTableData> {
       'paymentStatus': serializer.toJson<String>(paymentStatus),
       'gallerySlug': serializer.toJson<String>(gallerySlug),
       'notes': serializer.toJson<String?>(notes),
+      'paymentLink': serializer.toJson<String?>(paymentLink),
       'synced': serializer.toJson<bool>(synced),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -1037,6 +1072,7 @@ class EventsTableData extends DataClass implements Insertable<EventsTableData> {
     String? paymentStatus,
     String? gallerySlug,
     Value<String?> notes = const Value.absent(),
+    Value<String?> paymentLink = const Value.absent(),
     bool? synced,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -1052,6 +1088,7 @@ class EventsTableData extends DataClass implements Insertable<EventsTableData> {
     paymentStatus: paymentStatus ?? this.paymentStatus,
     gallerySlug: gallerySlug ?? this.gallerySlug,
     notes: notes.present ? notes.value : this.notes,
+    paymentLink: paymentLink.present ? paymentLink.value : this.paymentLink,
     synced: synced ?? this.synced,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -1081,6 +1118,9 @@ class EventsTableData extends DataClass implements Insertable<EventsTableData> {
           ? data.gallerySlug.value
           : this.gallerySlug,
       notes: data.notes.present ? data.notes.value : this.notes,
+      paymentLink: data.paymentLink.present
+          ? data.paymentLink.value
+          : this.paymentLink,
       synced: data.synced.present ? data.synced.value : this.synced,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -1101,6 +1141,7 @@ class EventsTableData extends DataClass implements Insertable<EventsTableData> {
           ..write('paymentStatus: $paymentStatus, ')
           ..write('gallerySlug: $gallerySlug, ')
           ..write('notes: $notes, ')
+          ..write('paymentLink: $paymentLink, ')
           ..write('synced: $synced, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -1121,6 +1162,7 @@ class EventsTableData extends DataClass implements Insertable<EventsTableData> {
     paymentStatus,
     gallerySlug,
     notes,
+    paymentLink,
     synced,
     createdAt,
     updatedAt,
@@ -1140,6 +1182,7 @@ class EventsTableData extends DataClass implements Insertable<EventsTableData> {
           other.paymentStatus == this.paymentStatus &&
           other.gallerySlug == this.gallerySlug &&
           other.notes == this.notes &&
+          other.paymentLink == this.paymentLink &&
           other.synced == this.synced &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
@@ -1157,6 +1200,7 @@ class EventsTableCompanion extends UpdateCompanion<EventsTableData> {
   final Value<String> paymentStatus;
   final Value<String> gallerySlug;
   final Value<String?> notes;
+  final Value<String?> paymentLink;
   final Value<bool> synced;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -1173,6 +1217,7 @@ class EventsTableCompanion extends UpdateCompanion<EventsTableData> {
     this.paymentStatus = const Value.absent(),
     this.gallerySlug = const Value.absent(),
     this.notes = const Value.absent(),
+    this.paymentLink = const Value.absent(),
     this.synced = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -1190,6 +1235,7 @@ class EventsTableCompanion extends UpdateCompanion<EventsTableData> {
     this.paymentStatus = const Value.absent(),
     required String gallerySlug,
     this.notes = const Value.absent(),
+    this.paymentLink = const Value.absent(),
     this.synced = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -1215,6 +1261,7 @@ class EventsTableCompanion extends UpdateCompanion<EventsTableData> {
     Expression<String>? paymentStatus,
     Expression<String>? gallerySlug,
     Expression<String>? notes,
+    Expression<String>? paymentLink,
     Expression<bool>? synced,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -1232,6 +1279,7 @@ class EventsTableCompanion extends UpdateCompanion<EventsTableData> {
       if (paymentStatus != null) 'payment_status': paymentStatus,
       if (gallerySlug != null) 'gallery_slug': gallerySlug,
       if (notes != null) 'notes': notes,
+      if (paymentLink != null) 'payment_link': paymentLink,
       if (synced != null) 'synced': synced,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -1251,6 +1299,7 @@ class EventsTableCompanion extends UpdateCompanion<EventsTableData> {
     Value<String>? paymentStatus,
     Value<String>? gallerySlug,
     Value<String?>? notes,
+    Value<String?>? paymentLink,
     Value<bool>? synced,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -1268,6 +1317,7 @@ class EventsTableCompanion extends UpdateCompanion<EventsTableData> {
       paymentStatus: paymentStatus ?? this.paymentStatus,
       gallerySlug: gallerySlug ?? this.gallerySlug,
       notes: notes ?? this.notes,
+      paymentLink: paymentLink ?? this.paymentLink,
       synced: synced ?? this.synced,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -1311,6 +1361,9 @@ class EventsTableCompanion extends UpdateCompanion<EventsTableData> {
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
+    if (paymentLink.present) {
+      map['payment_link'] = Variable<String>(paymentLink.value);
+    }
     if (synced.present) {
       map['synced'] = Variable<bool>(synced.value);
     }
@@ -1340,6 +1393,7 @@ class EventsTableCompanion extends UpdateCompanion<EventsTableData> {
           ..write('paymentStatus: $paymentStatus, ')
           ..write('gallerySlug: $gallerySlug, ')
           ..write('notes: $notes, ')
+          ..write('paymentLink: $paymentLink, ')
           ..write('synced: $synced, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -5393,6 +5447,7 @@ typedef $$EventsTableTableCreateCompanionBuilder =
       Value<String> paymentStatus,
       required String gallerySlug,
       Value<String?> notes,
+      Value<String?> paymentLink,
       Value<bool> synced,
       required DateTime createdAt,
       required DateTime updatedAt,
@@ -5411,6 +5466,7 @@ typedef $$EventsTableTableUpdateCompanionBuilder =
       Value<String> paymentStatus,
       Value<String> gallerySlug,
       Value<String?> notes,
+      Value<String?> paymentLink,
       Value<bool> synced,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -5478,6 +5534,11 @@ class $$EventsTableTableFilterComposer
 
   ColumnFilters<String> get notes => $composableBuilder(
     column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get paymentLink => $composableBuilder(
+    column: $table.paymentLink,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5561,6 +5622,11 @@ class $$EventsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get paymentLink => $composableBuilder(
+    column: $table.paymentLink,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get synced => $composableBuilder(
     column: $table.synced,
     builder: (column) => ColumnOrderings(column),
@@ -5631,6 +5697,11 @@ class $$EventsTableTableAnnotationComposer
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
 
+  GeneratedColumn<String> get paymentLink => $composableBuilder(
+    column: $table.paymentLink,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get synced =>
       $composableBuilder(column: $table.synced, builder: (column) => column);
 
@@ -5683,6 +5754,7 @@ class $$EventsTableTableTableManager
                 Value<String> paymentStatus = const Value.absent(),
                 Value<String> gallerySlug = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<String?> paymentLink = const Value.absent(),
                 Value<bool> synced = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -5699,6 +5771,7 @@ class $$EventsTableTableTableManager
                 paymentStatus: paymentStatus,
                 gallerySlug: gallerySlug,
                 notes: notes,
+                paymentLink: paymentLink,
                 synced: synced,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -5717,6 +5790,7 @@ class $$EventsTableTableTableManager
                 Value<String> paymentStatus = const Value.absent(),
                 required String gallerySlug,
                 Value<String?> notes = const Value.absent(),
+                Value<String?> paymentLink = const Value.absent(),
                 Value<bool> synced = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
@@ -5733,6 +5807,7 @@ class $$EventsTableTableTableManager
                 paymentStatus: paymentStatus,
                 gallerySlug: gallerySlug,
                 notes: notes,
+                paymentLink: paymentLink,
                 synced: synced,
                 createdAt: createdAt,
                 updatedAt: updatedAt,

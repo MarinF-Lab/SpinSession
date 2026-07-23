@@ -41,8 +41,10 @@ abstract final class AppRoutes {
   // Processing (Sprint 4)
   static String processing(String sessionId) => '/processing/$sessionId';
 
+  // Sesión (detalle del invitado)
+  static String sessionDetail(String sessionId) => '/session/$sessionId';
+
   // Sync / Gallery (Sprint 5)
   static String sync(String sessionId) => '/sync/$sessionId';
   static String gallery(String eventId) => '/gallery/$eventId';
-  static String privateSession(String sessionId) => '/private/$sessionId';
 }

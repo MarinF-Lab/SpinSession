@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../app/router/app_routes.dart';
 import '../../../../../shared/widgets/confirmation_dialog.dart';
+import '../../../../../shared/widgets/gallery_qr_dialog.dart';
 import '../../../../../shared/widgets/loading_screen.dart';
 import '../../../../../shared/widgets/status_chip.dart';
 import '../../domain/entities/event_entity.dart';
@@ -18,24 +20,32 @@ class EventDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final eventAsync = ref.watch(eventByIdProvider(eventId));
+    // Activa la suscripción Realtime para este evento — se entera solo
+    // cuando el webhook de Mercado Pago confirma el pago.
+    ref.watch(eventRealtimeProvider(eventId));
 
-    return eventAsync.when(
-      loading: () => const LoadingScreen(),
-      error: (e, _) => Scaffold(
+    final event = ref.watch(eventByIdProvider(eventId));
+    final isLoading =
+        ref.watch(eventControllerProvider.select((s) => s.isLoading));
+
+    // Dispara el QR automáticamente en el momento exacto en que el evento
+    // pasa a pagado (no en cada rebuild), comparando contra el valor previo.
+    ref.listen<EventEntity?>(eventByIdProvider(eventId), (previous, next) {
+      final wasPaid = previous?.paymentStatus == PaymentStatus.paid;
+      final isPaidNow = next?.paymentStatus == PaymentStatus.paid;
+      if (!wasPaid && isPaidNow) {
+        showGalleryQrDialog(context, eventId);
+      }
+    });
+
+    if (event == null) {
+      if (isLoading) return const LoadingScreen();
+      return Scaffold(
         appBar: AppBar(),
-        body: Center(child: Text(e.toString())),
-      ),
-      data: (event) {
-        if (event == null) {
-          return Scaffold(
-            appBar: AppBar(),
-            body: const Center(child: Text('Evento no encontrado')),
-          );
-        }
-        return _EventDetailView(event: event);
-      },
-    );
+        body: const Center(child: Text('Evento no encontrado')),
+      );
+    }
+    return _EventDetailView(event: event);
   }
 }
 
@@ -68,11 +78,16 @@ class _EventDetailView extends ConsumerWidget {
                   value: _Action.registerPayment,
                   child: Text('Registrar pago'),
                 ),
-              if (event.paymentStatus == PaymentStatus.paid)
+              if (event.paymentStatus == PaymentStatus.paid) ...[
+                const PopupMenuItem(
+                  value: _Action.showQr,
+                  child: Text('Ver código QR'),
+                ),
                 const PopupMenuItem(
                   value: _Action.cancelPayment,
                   child: Text('Cancelar pago'),
                 ),
+              ],
               if (event.eventStatus.canDelete)
                 const PopupMenuItem(
                   value: _Action.archive,
@@ -150,7 +165,18 @@ class _EventDetailView extends ConsumerWidget {
     final controller = ref.read(eventControllerProvider.notifier);
     switch (action) {
       case _Action.registerPayment:
-        await controller.registerPayment(event.id);
+        final checkoutUrl = await controller.registerPayment(event.id);
+        if (checkoutUrl != null) {
+          await launchUrl(Uri.parse(checkoutUrl),
+              mode: LaunchMode.externalApplication);
+        } else if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('No se pudo generar el link de pago.')),
+          );
+        }
+      case _Action.showQr:
+        showGalleryQrDialog(context, event.id);
       case _Action.cancelPayment:
         await controller.cancelPayment(event.id);
       case _Action.archive:
@@ -183,7 +209,7 @@ class _EventDetailView extends ConsumerWidget {
       s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 }
 
-enum _Action { registerPayment, cancelPayment, archive, delete }
+enum _Action { registerPayment, showQr, cancelPayment, archive, delete }
 
 class _InfoRow extends StatelessWidget {
   const _InfoRow({

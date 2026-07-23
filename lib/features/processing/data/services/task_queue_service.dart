@@ -136,8 +136,6 @@ class TaskQueueService {
           return await _executeUploadAsset(job);
         case JobType.syncSession:
           return await _executeSyncSession(job);
-        case JobType.generatePrivateSession:
-          return await _executeGeneratePrivateSession(job);
         case JobType.generateGallery:
           return await _executeGenerateGallery(job);
         case JobType.sendWhatsapp:
@@ -187,26 +185,6 @@ class TaskQueueService {
     return true;
   }
 
-  Future<bool> _executeGeneratePrivateSession(
-      ProcessingJobEntity job) async {
-    final sessionId = job.payload['sessionId'] as String?;
-    if (sessionId == null) return false;
-
-    // Verifica que el thumbnail ya esté disponible en Storage antes de
-    // marcar la sesión como lista — session.html arma la página en vivo.
-    try {
-      await _storage.createSignedUrl('sessions/$sessionId/1/thumbnail.jpg');
-      await _repo.updateStatus(job.id, JobStatus.running);
-    } catch (error) {
-      AppLogger.warning('TaskQueue',
-          'Sesión privada: archivo aún no disponible en storage ($error)');
-      return false;
-    }
-
-    await _sessionDatasource.updateStatus(sessionId, SessionStatus.synced);
-    return true;
-  }
-
   Future<bool> _executeGenerateGallery(ProcessingJobEntity job) async {
     // gallery.html arma la galería en vivo (consulta Supabase al abrirse),
     // no hace falta pre-generar nada del lado del dispositivo.
@@ -220,11 +198,12 @@ class TaskQueueService {
     final sessionId = job.payload['sessionId'] as String?;
     if (phone == null || countryCode == null || sessionId == null) return false;
 
+    final filePaths = await _repo.getCompletedVideoPaths(sessionId);
     await _sync.sendWhatsapp(
       phone: phone,
       countryCode: countryCode,
-      sessionId: sessionId,
       guestName: guestName ?? 'invitado',
+      filePaths: filePaths,
     );
 
     await _sessionDatasource.updateStatus(sessionId, SessionStatus.sent);

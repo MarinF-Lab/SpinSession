@@ -15,7 +15,6 @@ import '../../features/events/presentation/screens/event_detail_screen.dart';
 import '../../features/events/presentation/screens/history_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/gallery/presentation/screens/gallery_screen.dart';
-import '../../features/gallery/presentation/screens/private_session_screen.dart';
 import '../../features/processing/presentation/screens/processing_screen.dart';
 import '../../features/sync/presentation/screens/sync_screen.dart';
 import '../../features/recording/presentation/screens/recording_config_screen.dart';
@@ -240,11 +239,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/gallery/:eventId',
         builder: (_, s) =>
             GalleryScreen(eventId: s.pathParameters['eventId']!),
-      ),
-      GoRoute(
-        path: '/private/:sessionId',
-        builder: (_, s) =>
-            PrivateSessionScreen(sessionId: s.pathParameters['sessionId']!),
       ),
     ],
   );

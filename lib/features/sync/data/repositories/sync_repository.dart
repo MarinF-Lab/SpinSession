@@ -76,23 +76,6 @@ class SyncRepository {
       updatedAt: now,
     ));
 
-    // generate_private_session
-    await _jobDatasource.upsert(ProcessingJobEntity(
-      id: _uuid.v4(),
-      sessionId: sessionId,
-      jobType: JobType.generatePrivateSession,
-      priority: -3,
-      payload: {
-        'sessionId': sessionId,
-        'phone': session.phone,
-        'countryCode': session.countryCode,
-        'guestName': session.guestName,
-      },
-      status: JobStatus.pending,
-      createdAt: now,
-      updatedAt: now,
-    ));
-
     // generate_gallery
     await _jobDatasource.upsert(ProcessingJobEntity(
       id: _uuid.v4(),

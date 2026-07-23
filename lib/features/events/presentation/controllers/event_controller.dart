@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/network/connectivity_provider.dart';
 import '../../data/repositories/event_repository.dart';
 import '../../domain/entities/event_entity.dart';
 import '../../domain/entities/event_settings_entity.dart';
@@ -50,6 +52,17 @@ class EventController extends StateNotifier<EventState> {
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
+  }
+
+  /// Sincroniza con el backend (empuja pendientes, luego trae remotos) y
+  /// recarga la lista local. Solo actúa si hay conexión; en modo Offline
+  /// la app sigue funcionando con los datos locales (Anexo A.1.7).
+  Future<void> syncWithRemote() async {
+    if (_userId.isEmpty) return;
+    if (!await hasConnectionNow()) return;
+    await _repo.syncPending();
+    await _repo.pullFromRemote(_userId);
+    await loadAll();
   }
 
   Future<bool> createEvent({
@@ -106,10 +119,30 @@ class EventController extends StateNotifier<EventState> {
     }
   }
 
-  Future<void> registerPayment(String id) async {
-    await _repo.updatePaymentStatus(id, PaymentStatus.paid);
-    await _repo.updateStatus(id, EventStatus.paid);
-    await loadAll();
+  /// Genera (o reutiliza) el link de pago de Mercado Pago para este evento
+  /// y lo devuelve para que la UI lo abra. El evento NO se marca pagado acá
+  /// — eso lo hace el webhook de Mercado Pago al confirmarse el pago real
+  /// (ver supabase/functions/mercadopago-webhook), reflejado en la UI vía
+  /// Realtime.
+  Future<String?> registerPayment(String id) async {
+    try {
+      final response = await Supabase.instance.client.functions.invoke(
+        'create-payment-preference',
+        body: {'eventId': id},
+      );
+      final checkoutUrl = (response.data as Map?)?['checkoutUrl'] as String?;
+      if (checkoutUrl == null) {
+        state = state.copyWith(
+            errorMessage: 'No se pudo generar el link de pago.');
+        return null;
+      }
+      await _repo.updatePaymentLink(id, checkoutUrl);
+      await loadAll();
+      return checkoutUrl;
+    } catch (e) {
+      state = state.copyWith(errorMessage: e.toString());
+      return null;
+    }
   }
 
   Future<void> cancelPayment(String id) async {

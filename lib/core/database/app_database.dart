@@ -29,7 +29,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -38,6 +38,9 @@ class AppDatabase extends _$AppDatabase {
         },
         onUpgrade: (m, from, to) async {
           await m.createAll();
+          if (from < 5) {
+            await m.addColumn(eventsTable, eventsTable.paymentLink);
+          }
         },
       );
 

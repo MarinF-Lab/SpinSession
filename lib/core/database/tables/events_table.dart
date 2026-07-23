@@ -20,6 +20,7 @@ class EventsTable extends Table {
       text().withDefault(const Constant('pending'))();
   TextColumn get gallerySlug => text()();
   TextColumn get notes => text().nullable()();
+  TextColumn get paymentLink => text().nullable()();
   BoolColumn get synced => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();

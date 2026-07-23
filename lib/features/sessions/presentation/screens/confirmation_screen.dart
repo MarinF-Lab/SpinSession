@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../../app/router/app_routes.dart';
 import '../../../../../shared/widgets/primary_button.dart';
 import '../../../../../shared/widgets/secondary_button.dart';
+import '../../../../../shared/widgets/video_preview_dialog.dart';
 import '../../../recording/presentation/providers/recording_providers.dart';
 import '../providers/session_providers.dart';
 
@@ -29,7 +30,7 @@ class ConfirmationScreen extends ConsumerWidget {
       body: Column(
         children: [
           if (recordingState.takes.isNotEmpty)
-            _TakesPreviewRow(count: recordingState.takes.length),
+            _TakesPreviewRow(takes: recordingState.takes),
           Expanded(
             child: _TakesList(
               takes: recordingState.takes,
@@ -38,9 +39,9 @@ class ConfirmationScreen extends ConsumerWidget {
           ),
           _ActionPanel(
             takeCount: recordingState.takeCount,
-            onConfirm: () => _confirm(
+            canAddTake: recordingState.canAddTake,
+            onConfirm: () => _onAccept(
               context,
-              ref,
               sessionNotifier,
               recordingNotifier,
             ),
@@ -69,24 +70,63 @@ class ConfirmationScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _confirm(
+  /// Pregunta cómo continuar tras aceptar las tomas: esperar el procesamiento
+  /// y enviar el WhatsApp al terminar, o dejarlo procesando en segundo plano
+  /// (se podrá enviar luego desde el Registro).
+  Future<void> _onAccept(
     BuildContext context,
-    WidgetRef ref,
     SessionController sessionNotifier,
     RecordingController recordingNotifier,
   ) async {
+    final waitAndSend = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+              child: Text('¿Cómo continuar?',
+                  style: Theme.of(ctx).textTheme.titleMedium),
+            ),
+            ListTile(
+              leading: const Icon(Icons.hourglass_bottom_outlined),
+              title: const Text('Esperar y enviar por WhatsApp'),
+              subtitle: const Text(
+                  'Se procesa ahora y al terminar se abre el chat del invitado.'),
+              onTap: () => Navigator.of(ctx).pop(true),
+            ),
+            ListTile(
+              leading: const Icon(Icons.cloud_sync_outlined),
+              title: const Text('Procesar en segundo plano'),
+              subtitle: const Text(
+                  'Sigues registrando invitados; podrás enviar luego desde el Registro.'),
+              onTap: () => Navigator.of(ctx).pop(false),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (waitAndSend == null || !context.mounted) return;
+
     await sessionNotifier.confirmSession(sessionId, eventId);
     recordingNotifier.prepareNewTake();
-    if (context.mounted) {
-      context.go(AppRoutes.processing(sessionId));
+    if (!context.mounted) return;
+
+    if (waitAndSend) {
+      context.go(AppRoutes.processing(sessionId), extra: true);
+    } else {
+      context.go(AppRoutes.studio(eventId));
     }
   }
 }
 
 class _TakesPreviewRow extends StatelessWidget {
-  const _TakesPreviewRow({required this.count});
+  const _TakesPreviewRow({required this.takes});
 
-  final int count;
+  final List<String> takes;
 
   @override
   Widget build(BuildContext context) {
@@ -102,15 +142,18 @@ class _TakesPreviewRow extends StatelessWidget {
             height: 64,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              itemCount: count,
+              itemCount: takes.length,
               separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (_, i) => Container(
-                width: 64,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(12),
+              itemBuilder: (_, i) => GestureDetector(
+                onTap: () => showVideoPreviewDialog(context, takes[i]),
+                child: Container(
+                  width: 64,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.play_circle_outline),
                 ),
-                child: const Icon(Icons.videocam_outlined),
               ),
             ),
           ),
@@ -155,6 +198,7 @@ class _TakesList extends StatelessWidget {
 class _ActionPanel extends StatelessWidget {
   const _ActionPanel({
     required this.takeCount,
+    required this.canAddTake,
     required this.onConfirm,
     required this.onAddTake,
     required this.onRetry,
@@ -162,6 +206,7 @@ class _ActionPanel extends StatelessWidget {
   });
 
   final int takeCount;
+  final bool canAddTake;
   final VoidCallback onConfirm;
   final VoidCallback onAddTake;
   final VoidCallback onRetry;
@@ -191,11 +236,13 @@ class _ActionPanel extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          SecondaryButton(
-            label: 'Agregar otra toma',
-            onPressed: onAddTake,
-          ),
+          if (canAddTake) ...[
+            const SizedBox(height: 8),
+            SecondaryButton(
+              label: 'Agregar otra toma',
+              onPressed: onAddTake,
+            ),
+          ],
           const SizedBox(height: 8),
           TextButton(
             onPressed: onCancel,

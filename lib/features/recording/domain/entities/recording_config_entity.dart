@@ -3,12 +3,12 @@ class RecordingConfigEntity {
     required this.id,
     required this.eventId,
     required this.updatedAt,
-    this.durationSeconds = 30,
+    this.durationSeconds = 10,
     this.resolution = '1080p',
     this.cameraFacing = 'back',
     this.quality = 'high',
     this.defaultEffects = const [],
-    this.maxTakesPerSession = 3,
+    this.maxTakesPerSession = 1,
     this.countdownSeconds = 3,
   });
 

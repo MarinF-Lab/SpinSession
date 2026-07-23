@@ -148,7 +148,6 @@ class _SyncJobTile extends StatelessWidget {
   IconData _iconForType(JobType type) => switch (type) {
         JobType.uploadAsset => Icons.cloud_upload_outlined,
         JobType.syncSession => Icons.sync_outlined,
-        JobType.generatePrivateSession => Icons.lock_outline,
         JobType.generateGallery => Icons.photo_library_outlined,
         JobType.sendWhatsapp => Icons.send_outlined,
         JobType.cleanupStorage => Icons.cleaning_services_outlined,

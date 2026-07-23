@@ -1,20 +1,13 @@
+import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../core/config/web_gallery_config.dart';
 import '../../../sessions/domain/entities/session_entity.dart';
 
 class SyncService {
   SyncService(this._client);
 
   final SupabaseClient _client;
-
-  /// URL pública de la página web de la sesión privada de un invitado
-  /// (`session.html?session=<id>`), alojada en el bucket público
-  /// `spinsession-web`. Es el único link que se debe compartir por
-  /// WhatsApp o QR para una sesión individual.
-  String buildPrivateSessionUrl(String sessionId) =>
-      WebGalleryConfig.privateSession(sessionId);
 
   Future<void> syncSession(SessionEntity session) async {
     await _client.from('sessions').upsert({
@@ -48,32 +41,39 @@ class SyncService {
     });
   }
 
+  /// Comparte los videos de la sesión por WhatsApp en dos pasos, ya que
+  /// WhatsApp no acepta archivos adjuntos por deep link (solo texto):
+  /// 1) abre/crea la conversación del invitado vía wa.me (funciona aunque
+  ///    el número no esté agendado como contacto);
+  /// 2) dispara el selector nativo de Compartir con los videos adjuntos —
+  ///    al haberse abierto recién esa conversación, WhatsApp aparece entre
+  ///    los destinos recientes del selector.
   Future<void> sendWhatsapp({
     required String phone,
     required String countryCode,
-    required String sessionId,
     required String guestName,
+    required List<String> filePaths,
   }) async {
     final cleanCountry = countryCode.replaceAll('+', '');
     final cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
     final message = '¡Hola $guestName! 🎬\n\n'
         'Gracias por participar. Tus videos ya están disponibles.\n\n'
-        'Descárgalos aquí:\n${buildPrivateSessionUrl(sessionId)}\n\n'
         'SpinSession';
-
     final encoded = Uri.encodeComponent(message);
-    // Abre WhatsApp directamente en el chat del invitado. Se intenta primero
-    // el esquema nativo (chat directo) y, si no está disponible, el enlace
-    // web wa.me como respaldo.
-    final nativeUri = Uri.parse(
-        'whatsapp://send?phone=$cleanCountry$cleanPhone&text=$encoded');
-    final webUri =
-        Uri.parse('https://wa.me/$cleanCountry$cleanPhone?text=$encoded');
 
-    if (await canLaunchUrl(nativeUri)) {
-      await launchUrl(nativeUri, mode: LaunchMode.externalApplication);
-    } else {
-      await launchUrl(webUri, mode: LaunchMode.externalApplication);
+    final waUri =
+        Uri.parse('https://wa.me/$cleanCountry$cleanPhone?text=$encoded');
+    await launchUrl(waUri, mode: LaunchMode.externalApplication);
+
+    // Da tiempo a que el SO cambie el foco a WhatsApp antes de abrir el
+    // selector de Compartir encima.
+    await Future.delayed(const Duration(milliseconds: 700));
+
+    if (filePaths.isNotEmpty) {
+      await Share.shareXFiles(
+        filePaths.map((p) => XFile(p)).toList(),
+        text: message,
+      );
     }
   }
 }

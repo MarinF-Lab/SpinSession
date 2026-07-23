@@ -10,6 +10,8 @@ import '../../../processing/presentation/providers/processing_providers.dart'
         processingRepositoryProvider,
         taskQueueServiceProvider,
         syncServiceProvider;
+import '../../../recording/presentation/providers/recording_providers.dart'
+    show recordingConfigRepositoryProvider;
 import '../../data/datasources/session_local_datasource.dart';
 import '../../data/repositories/session_repository.dart';
 import '../../domain/entities/session_asset_entity.dart';
@@ -166,7 +168,15 @@ class SessionController extends StateNotifier<SessionState> {
       final assetRefs = assets
           .map((a) => (id: a.id, localPath: a.localPath, takeNumber: a.takeNumber))
           .toList();
-      await processingRepo.createJobsForSession(id, assetRefs, outputBaseDir);
+      final recordingConfig = await _ref
+          .read(recordingConfigRepositoryProvider)
+          .getByEvent(eventId);
+      await processingRepo.createJobsForSession(
+        id,
+        assetRefs,
+        outputBaseDir,
+        activeEffects: recordingConfig?.defaultEffects ?? const [],
+      );
       queue.start();
     }
 
@@ -178,19 +188,22 @@ class SessionController extends StateNotifier<SessionState> {
     await loadByEvent(eventId);
   }
 
-  /// Envía (o reenvía) el enlace de la sesión por WhatsApp abriendo el chat
-  /// del invitado. El link apunta a la página web de la sesión privada
-  /// (`session.html`), que carga sus propias signed URLs al abrirse. Marca
-  /// la sesión como "enviada" al terminar.
+  /// Envía (o reenvía) los videos de la sesión por WhatsApp: abre/crea la
+  /// conversación del invitado y luego dispara el selector nativo de
+  /// Compartir con los archivos adjuntos. Marca la sesión como "enviada"
+  /// al terminar.
   Future<bool> sendWhatsappForSession(SessionEntity session) async {
     try {
       final sync = _ref.read(syncServiceProvider);
+      final filePaths = await _ref
+          .read(processingRepositoryProvider)
+          .getCompletedVideoPaths(session.id);
 
       await sync.sendWhatsapp(
         phone: session.phone,
         countryCode: session.countryCode,
-        sessionId: session.id,
         guestName: session.guestName,
+        filePaths: filePaths,
       );
       await _repo.updateStatus(session.id, SessionStatus.sent);
       await loadByEvent(session.eventId);

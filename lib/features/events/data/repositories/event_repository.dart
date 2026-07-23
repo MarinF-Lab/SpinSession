@@ -50,6 +50,12 @@ class EventRepository {
     if (event != null) _syncInBackground(event);
   }
 
+  Future<void> updatePaymentLink(String id, String link) async {
+    await _local.updatePaymentLink(id, link);
+    final event = await _local.getById(id);
+    if (event != null) _syncInBackground(event);
+  }
+
   Future<EventSettingsEntity?> getSettings(String eventId) =>
       _local.getSettings(eventId);
 

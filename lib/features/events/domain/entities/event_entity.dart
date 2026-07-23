@@ -15,6 +15,7 @@ class EventEntity {
     required this.updatedAt,
     this.templateId,
     this.notes,
+    this.paymentLink,
     this.synced = false,
   });
 
@@ -29,6 +30,7 @@ class EventEntity {
   final PaymentStatus paymentStatus;
   final String gallerySlug;
   final String? notes;
+  final String? paymentLink;
   final bool synced;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -47,6 +49,7 @@ class EventEntity {
     PaymentStatus? paymentStatus,
     String? notes,
     String? templateId,
+    String? paymentLink,
     bool? synced,
     DateTime? updatedAt,
   }) {
@@ -62,6 +65,7 @@ class EventEntity {
       gallerySlug: gallerySlug,
       notes: notes ?? this.notes,
       templateId: templateId ?? this.templateId,
+      paymentLink: paymentLink ?? this.paymentLink,
       synced: synced ?? this.synced,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

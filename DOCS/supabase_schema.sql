@@ -27,9 +27,15 @@ create table if not exists public.events (
   payment_status text not null,
   gallery_slug text not null,
   notes text,
+  payment_link text,
   created_at timestamptz not null,
   updated_at timestamptz not null
 );
+
+-- Para bases ya existentes (create table if not exists no agrega columnas
+-- a una tabla que ya existe) — URL de la preferencia de Mercado Pago
+-- generada para este evento, ver supabase/functions/create-payment-preference.
+alter table public.events add column if not exists payment_link text;
 
 alter table public.events enable row level security;
 

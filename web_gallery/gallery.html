@@ -154,12 +154,6 @@
     contentEl.innerHTML = `<div class="state error">${escapeHtml(message)}</div>`;
   }
 
-  function sessionUrl(sessionId) {
-    const url = new URL("session.html", window.location.href);
-    url.searchParams.set("session", sessionId);
-    return url.toString();
-  }
-
   async function loadGallery(supabaseClient) {
     const eventId = new URLSearchParams(window.location.search).get("event");
     if (!eventId) {
@@ -226,13 +220,13 @@
       const takeCount = sessionAssets.filter((a) => a.asset_type !== "generate_thumbnail").length;
 
       return `
-        <a class="card" href="${sessionUrl(session.id)}">
+        <div class="card">
           ${thumbHtml}
           <div class="meta">
             <div class="name">${escapeHtml(session.guest_name || "Invitado")}</div>
             <div class="count">${takeCount} ${takeCount === 1 ? "toma" : "tomas"}</div>
           </div>
-        </a>
+        </div>
       `;
     }));
 

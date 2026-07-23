@@ -2,12 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
-import '../../../../app/router/app_routes.dart';
-import '../../../../core/config/web_gallery_config.dart';
 import '../../../../shared/widgets/empty_state.dart';
+import '../../../../shared/widgets/gallery_qr_dialog.dart';
 import '../../../events/presentation/providers/event_providers.dart';
 import '../../../sessions/presentation/providers/session_providers.dart';
 
@@ -28,7 +25,7 @@ class GalleryScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.qr_code_outlined),
             tooltip: 'Código QR',
-            onPressed: () => _showQrDialog(context, eventId),
+            onPressed: () => showGalleryQrDialog(context, eventId),
           ),
         ],
       ),
@@ -43,32 +40,6 @@ class GalleryScreen extends ConsumerWidget {
                   sessions: sessionState.sessions,
                   eventId: eventId,
                 ),
-    );
-  }
-
-  void _showQrDialog(BuildContext context, String eventId) {
-    final galleryUrl = WebGalleryConfig.gallery(eventId);
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Galería pública'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            QrImageView(data: galleryUrl, size: 200),
-            const SizedBox(height: 12),
-            Text(galleryUrl,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -90,22 +61,17 @@ class _SessionGrid extends ConsumerWidget {
         childAspectRatio: 0.85,
       ),
       itemCount: sessions.length,
-      itemBuilder: (context, i) {
-        final session = sessions[i];
-        return _SessionCard(
-          session: session,
-          onTap: () => context.push(AppRoutes.privateSession(session.id)),
-        );
-      },
+      itemBuilder: (context, i) => _SessionCard(session: sessions[i]),
     );
   }
 }
 
+/// Tarjeta informativa (no navega a ningún lado — la galería del invitado
+/// es la página web pública; no existe una vista privada por sesión).
 class _SessionCard extends StatelessWidget {
-  const _SessionCard({required this.session, required this.onTap});
+  const _SessionCard({required this.session});
 
   final dynamic session;
-  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -113,47 +79,44 @@ class _SessionCard extends StatelessWidget {
     final thumbnailPath = _thumbnailPath(session.id);
     final thumbFile = File(thumbnailPath);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: thumbFile.existsSync()
-                  ? Image.file(thumbFile, fit: BoxFit.cover)
-                  : Container(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .surfaceContainerHighest,
-                      child: const Icon(Icons.person_outline, size: 48),
-                    ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    session.guestName,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: thumbFile.existsSync()
+                ? Image.file(thumbFile, fit: BoxFit.cover)
+                : Container(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .surfaceContainerHighest,
+                    child: const Icon(Icons.person_outline, size: 48),
                   ),
-                  Text(
-                    session.status.label,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
-                  ),
-                ],
-              ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  session.guestName,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  session.status.label,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -19,11 +19,11 @@ class RecordingConfigScreen extends ConsumerStatefulWidget {
 
 class _RecordingConfigScreenState
     extends ConsumerState<RecordingConfigScreen> {
-  int _durationSeconds = 30;
+  int _durationSeconds = 10;
   String _resolution = '1080p';
   String _cameraFacing = 'back';
   String _quality = 'high';
-  int _maxTakes = 3;
+  int _maxTakes = 1;
   int _countdownSeconds = 3;
   bool _initialized = false;
   bool _saving = false;

@@ -107,4 +107,14 @@ class EventLocalDatasource {
       ),
     );
   }
+
+  Future<void> updatePaymentLink(String id, String link) async {
+    await (_db.update(_db.eventsTable)..where((t) => t.id.equals(id))).write(
+      EventsTableCompanion(
+        paymentLink: Value(link),
+        updatedAt: Value(DateTime.now()),
+        synced: const Value(false),
+      ),
+    );
+  }
 }

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -40,14 +42,20 @@ class ProcessingRepository {
   Future<void> createJobsForSession(
     String sessionId,
     List<({String id, String localPath, int takeNumber})> assets,
-    String outputBaseDir,
-  ) async {
+    String outputBaseDir, {
+    List<String> activeEffects = const [],
+  }) async {
     final now = DateTime.now();
+    // El thumbnail siempre se genera (no es un "efecto", es infraestructura
+    // para galería/preview); los demás se filtran por la config del evento.
+    final jobTypes = _jobTypes.where((type) =>
+        type == JobType.generateThumbnail ||
+        activeEffects.contains(type.value));
 
     for (final asset in assets) {
       final assetOutDir = '$outputBaseDir/${asset.takeNumber}';
 
-      for (final type in _jobTypes) {
+      for (final type in jobTypes) {
         final outputPath = _outputPath(type, assetOutDir, asset.takeNumber);
         final payload = type == JobType.generateBurst
             ? {'inputPath': asset.localPath, 'outputDir': '$assetOutDir/burst'}
@@ -68,6 +76,22 @@ class ProcessingRepository {
         await _datasource.upsert(job);
       }
     }
+  }
+
+  /// Paths locales de los videos procesados (cámara lenta/reverse/boomerang)
+  /// ya completados para una sesión — usados para compartir por WhatsApp.
+  /// Excluye el thumbnail (no es un "video") y el burst (una carpeta de
+  /// frames, no un archivo compartible individual).
+  Future<List<String>> getCompletedVideoPaths(String sessionId) async {
+    final jobs = await _datasource.getCompletedMediaJobs(sessionId);
+    return jobs
+        .where((j) =>
+            j.jobType != JobType.generateThumbnail &&
+            j.jobType != JobType.generateBurst)
+        .map((j) => j.payload['outputPath'] as String?)
+        .whereType<String>()
+        .where((p) => File(p).existsSync())
+        .toList();
   }
 
   Future<void> updateStatus(String id, JobStatus status) =>
